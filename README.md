@@ -8,7 +8,7 @@ Now everything should be prepared to start the "fully" automated event generatio
 
 ## Running the parallel event generation on the HTCondor
 To start the automation, execute:
-  python submit_handler.py [number of batches] [list/of/process/dirs]
+```python submit_handler.py [number of batches] [list/of/process/dirs]```
 This will generate pwgevents-[Nbatch].lhe files firstly within the process directory and mv these afterwards automatically to a new made directory **./GenData/[process_name]/**. If you want to examine the seeds used for the generation, just have a look into the **pwgseeds.dat** file, which is also moved into the same directory. Be aware, that: 
  * The script will generate the GenData directory in your current working directory. So make sure that you are executing the script, where you want your .lhe event files saved. 
  * Due to some random internal POWHEG settings, you can't generate more than 200 batches at the same time. If you want to generate more batches, just run the submit_handler several times. It will automatically check for the highest batch number already existing in your GenData directory and rename the generated .lhe files with a higher batch number, so no batches will be overwritten.
