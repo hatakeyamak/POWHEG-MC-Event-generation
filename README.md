@@ -1,4 +1,4 @@
-# Documentation and Prescription
+# Documentation and Prescription :+1:
 
 ## Preparation
 For this scripts to work, make sure you have the according POWHEG process installed within your POWHEG-BOX, and you have executed `make pwhg_main` within the process directory. 
