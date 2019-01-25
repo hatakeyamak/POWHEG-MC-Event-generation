@@ -13,7 +13,7 @@ A list of processes with the needed POWHEG version is also given at the top of [
 #### Setting up the environment
 For most POWHEG processes, POWHEG will need additional packages, e.g. the LHAPDF and FASTJET libraries. In CMSSW these libraries are already included. 
 You can find the path to the executables in the `[package].xml` files within your `CMSSW_X_X_X/config/toolbox/slc6_amd64_gcc630/tools/selected/` directory.
-For most systems it is sufficient to add `lhapdf-config` and the `fastjet-config` executables to your `$PATH` environmental variable.
+For most systems it is sufficient to add `lhapdf-config` and the `fastjet-config` executables to your `$PATH`, and in case of the `lhapdf-config` also to your `$LD_LIBRARY_PATH`, environmental variable.
 If this doesn't work, well, you're screwed. In this case you have to modify the `Makefile` which rules the compilation of the Fortran code.
 
 #### Compile
