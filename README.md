@@ -18,7 +18,7 @@ If this doesn't work, well, you're screwed. In this case you have to modify the 
 
 #### Compile
 Now if everything is set, do:
-```
+```console
 cd POWHEG-BOX/proc_dir
 make <target>
 ```
@@ -34,7 +34,9 @@ Now everything should be prepared to start the "fully" automated event generatio
 ## Running the parallel event generation on the HTCondor
 To start the automation, execute:
 
-```python submit_handler.py [number of batches] [list/of/process/dirs]```
+```console
+python submit_handler.py [number of batches] [list/of/process/dirs]
+```
 
 This will generate pwgevents-[Nbatch].lhe files firstly within the process directory and mv these afterwards automatically to a new made directory `./GenData/[process_name]/`. 
 If you want to examine the seeds used for the generation, just have a look into the `pwgseeds.dat` file, which is also moved into the same directory. 
