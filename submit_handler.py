@@ -8,11 +8,11 @@ import re
 thisdir = os.path.dirname(os.path.realpath(__file__))
 thisdir = os.path.abspath(thisdir)
 
-classdir = os.path.join(thisdir, "base", "classes")
+# ~ classdir = os.path.join(thisdir, "base", "classes")
 
-# TODO: check for the submit script and add it
-if not classdir in sys.path:
-    sys.path.append(classdir)
+# ~ # TODO: check for the submit script and add it
+# ~ if not classdir in sys.path:
+    # ~ sys.path.append(classdir)
     
 from batchConfig_base import batchConfig_base
 
