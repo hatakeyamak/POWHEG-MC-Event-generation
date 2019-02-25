@@ -10,9 +10,9 @@ def create_scripts (nbatches, processes):
     
     for process in processes:
         
-        # check if given argument is a process directory in POWHEG-BOX-V2
+        # check if given argument is a process directory in POWHEG-BOX-V2 or POWHEG-BOX-RES
         if not(os.path.isdir(process)) or  'POWHEG' not in os.path.dirname(process):
-            print 'Argument ' + str(process) + ' is not a POWHEG process directory' + '\njob aborted'
+            print 'Error: Argument ' + str(process) + ' is not a POWHEG process directory' + '\nGeneration aborted!'
             continue
         
         # generate directory system
@@ -63,7 +63,7 @@ def create_scripts (nbatches, processes):
                 
 def main (args = sys.argv[1:]):
     if not(args[0].isdigit()):
-        print 'Wrong usage! First argument has to be an integer, representing the number of batches, further arguments should be director to a POWHEG process\nAbort!'
+        print 'Wrong usage! First argument has to be an integer, representing the number of batches, further arguments should be directors to a POWHEG process\nAbort!'
         exit(0)
         
     nbatches = int(args[0])

@@ -31,6 +31,11 @@ def change_inputfile (stage, processes):
         elif str(stage) == str(12):
             cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 2\" >> powheg.input'
             subprocess.call(cmd, shell = True)
+        
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(12):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 3\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
             
         # compute NLO and upper bounding envelope for the generation of the underlying born configurations
         elif str(stage) == str(2):
