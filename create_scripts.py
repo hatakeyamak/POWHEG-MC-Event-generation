@@ -37,7 +37,7 @@ def create_scripts (nbatches, processes):
                                        'export CMSSW_GIT_REFERENCE=/nfs/dust/cms/user/mhorzela/.cmsgit-cache\n', 
                                        'alias cd=\'cd -P\'\n', 
                                        'myvarcwd=$PWD\n', 
-                                       'cd /nfs/dust/cms/user/mhorzela/CMSSW/CMSSW_9_4_9/src\n', 
+                                       'cd /nfs/dust/cms/user/mhorzela/CMSSW_9_4_9/src\n', 
                                        'eval `scramv1 runtime -sh`\n', 
                                        'cd ~\n', 
                                        'echo "setup CMSSW_949 and stuff"\n', 
