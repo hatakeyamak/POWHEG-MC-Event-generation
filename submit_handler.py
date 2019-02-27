@@ -8,11 +8,11 @@ import re
 thisdir = os.path.dirname(os.path.realpath(__file__))
 thisdir = os.path.abspath(thisdir)
 
-classdir = os.path.join(thisdir, "base", "classes")
+# ~ classdir = os.path.join(thisdir, "base", "classes")
 
-# TODO: check for the submit script and add it
-if not classdir in sys.path:
-    sys.path.append(classdir)
+# ~ # TODO: check for the submit script and add it
+# ~ if not classdir in sys.path:
+    # ~ sys.path.append(classdir)
     
 from batchConfig_base import batchConfig_base
 
@@ -21,7 +21,7 @@ from batchConfig_base import batchConfig_base
 if not thisdir in sys.path:
     sys.path.append(thisdir)
     
-print sys.path
+print "The current working directory is: ", sys.path
 
 from change_input import change_inputfile
 from make_seeds import make_seeds
@@ -30,7 +30,7 @@ from create_scripts import create_scripts
 
 
 
-def submit_handler(nbatches, processes):
+def submit_handler(nbatches, processes, finalization = False):
     
     # 1st step: make the seed files (make_seeds) for the according process in POWHEG-BOX-[version]/[ProcessName]/pwgseeds.dat
     if not os.path.isfile(os.path.realpath(processes[0])):
@@ -46,7 +46,7 @@ def submit_handler(nbatches, processes):
     
     # 3rd step: change the in the process directory already existing powheg.input file to the accoring parallel stage and start the script
     # number of POWHEG generation stages: default 5 stages in parallel generation (see change_input.py for more info)
-    stages = [11, 12, 2, 3, 4]
+    stages = [11, 12, 13, 2, 3, 3, 4]
     
     for n, stage in enumerate(stages):
     	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
@@ -70,7 +70,7 @@ def submit_handler(nbatches, processes):
 	            genfiles += glob('pwg*.top')
 	            genfiles += glob('pwgfullgrid*.dat')
 	            genfiles += glob('pwgubound*.dat')
-	            genfiles = [os.path.abspath(x) for x	 in genfiles]
+	            genfiles = [os.path.abspath(x) for x in genfiles]
 	            for genfile in genfiles:
 	                os.remove(genfile)
 	            print 'Generation remnants removed. Can start clean generation.\n'
@@ -80,7 +80,10 @@ def submit_handler(nbatches, processes):
             target_dir = os.path.join(work_dir, 'GenData', process_name)
             os.chdir(target_dir)
             scripts = glob("*.sh")
-            scripts = [os.path.abspath(x) for x in scripts]
+            if stage == stages[-3]:                     # special treatment for the first parallelstage=3: produce *fullgrid* files on a single core
+                scripts = [os.path.abspath(scripts[0])]
+            else:
+                scripts = [os.path.abspath(x) for x in scripts]
             
             # directory for the array scripts
             foldername = "SubmitArrays"
@@ -92,7 +95,7 @@ def submit_handler(nbatches, processes):
             print 'Setting job porperties ... \n'
             bc = batchConfig_base()
             bc.diskspace = 3000000
-            bc.runtime = 86400 #n times 24h 
+            bc.runtime = int(1.5*86400) #n times 24h 
             
             # submit the batches in the current stage as an arrayjob to the cluster
             print 'Submitting jobs ... \n'
@@ -109,6 +112,12 @@ def submit_handler(nbatches, processes):
         
     # last step: if all generation steps are finished, move the generated events .lhe and the pwgseeds.dat into the Gendata directory
     print 'All generation steps finished. Finalizing ...\n'
+    if finalization:
+        finalize(processes)
+
+
+
+def finalize(processes):
     for process in processes:
 
             process = os.path.abspath(process)
@@ -142,9 +151,10 @@ def submit_handler(nbatches, processes):
             os.rename(seedfile, os.path.join(target_dir, 'pwgseeds_batchnum>'+str(highest)+'.dat'))
                 
             os.chdir(work_dir)
-
+    
     print 'Finished! You can find all generated data and the seeds used for the generation within the GenData directory.'
-        
+
+
 
 def main(args = sys.argv[1:]):
     if not(args[0].isdigit()):
@@ -154,7 +164,9 @@ def main(args = sys.argv[1:]):
     nbatches = int(args[0])
     processes = args[1:]
     
-    submit_handler (nbatches = nbatches, processes = processes)
+    submit_handler (nbatches = nbatches, processes = processes, finalization = False)
+
+
 
 if __name__ == '__main__':
     main()
