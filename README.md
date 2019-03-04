@@ -1,3 +1,60 @@
+# Instructions for the ttb-jets MC event production with POWHEG-BOX-RES
+
+### Prepare the python scripts for the automated event generation
+Clone [this git repository](https://gitlab.cern.ch/kit-cn-cms/powheg-event-generation) and checkout into the tree `production`.
+Next set the environment by adding these lines
+```console
+##########################################################
+### Set the PATH environment right for use with POWHEG ###
+##########################################################
+#add the LHAPDF library path to PATH
+PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+
+#add the FASTJET library path to PATH
+PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/fastjet/3.1.0/bin/
+echo "setup POWHEG"
+```
+to your setup command file and source it. Next source CMSSW, to ensure a FORTRAN comppiler newer than version 5 is loaded.
+
+
+### Installation of POWHEG-BOX-RES and ttbb
+Checkout
+```console
+svn checkout --revision 3604 --username anonymous --password anonymous svn://powhegbox.mib.infn.it/trunk/POWHEG-BOX-RES
+```
+.
+This will create a directory `POWHEG-BOX-RES`. Enter it and clone the `ttbb`-process.
+```console
+cd POWHEG-BOX-RES
+git clone ssh://git@gitlab.cern.ch:7999/tjezo/powheg-box-res_ttbb.git ttbb
+```
+Enter the `ttbb`-directory and compile the Fortran code.
+```console
+cd ttbb
+make
+```
+
+### Prepare the run
+Copy the input config `powheg.input-save` and the reweighting file `pwg-rwl.dat` into your process directory.
+```console
+cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-BOX-RES/ttbb
+```
+
+### Run the Powheg MC ttb-jets event generation
+Now everything should be prepared. First make sure you have a valid voms-proxy.
+Start a screen session and setup the environment described above and CMSSW.
+Start the event generation by executing
+```console
+python /path/to/powheg-event-generation/submit_handler.py 120 /path/to/POWHEG-BOX-RES/ttbb
+```
+.
+The script will automatically produce the MC events in seven stages. 
+Each stage has to finish completely, before the next stage can start.
+Alternatively you could also execute the stages by hand. 
+This is only recommended for debugging and cross-checking.
+
+
 # Documentation and Prescription :+1:
 
 ## Preparation

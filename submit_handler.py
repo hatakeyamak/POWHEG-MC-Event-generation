@@ -49,7 +49,7 @@ def submit_handler(nbatches, processes, finalization = False):
     choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4"]
     choice_stages = dict(zip(choices, stages))
     print "With which stage do you want to start the generation? Choose:", choice_stages
-    choice = raw_input("Type one of the numbers. The order of a POWHEG run is " + str(stages) + ": ") 
+    choice = raw_input("Type one of the numbers. The order of a POWHEG run is [" + " ".join([str(x) for x in stages]) + "]: ")
     if not any(choice == str(x) for x in stages):
         print "This is not a valid choice. Abort!"
         exit(0)
