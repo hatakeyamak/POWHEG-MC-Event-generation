@@ -35,8 +35,7 @@ def submit_handler(nbatches, processes, finalization = False):
     # 1st step: make the seed files (make_seeds) for the according process in POWHEG-BOX-[version]/[ProcessName]/pwgseeds.dat
     if not os.path.isfile(os.path.realpath(processes[0])):
         make_seeds(nbatches, processes)
-
-    print 'Powheg seeds initialized!\n'
+        print 'Powheg seeds initialized!\n'
         
     
     # 2nd step: create the submit scripts (create_scripts): current_dir/GenData/[ProcessName]/jobscript_batch_[BatchNumber]
@@ -46,9 +45,32 @@ def submit_handler(nbatches, processes, finalization = False):
     
     # 3rd step: change the in the process directory already existing powheg.input file to the accoring parallel stage and start the script
     # number of POWHEG generation stages: default 5 stages in parallel generation (see change_input.py for more info)
-    stages = [11, 12, 13, 2, 3, 3, 4]
+    stages = [11, 12, 13, 2, 31, 32, 4]
+    choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4"]
+    choice_stages = dict(zip(choices, stages))
+    print "With which stage do you want to start the generation? Choose:", choice_stages
+    choice = raw_input("Type one of the numbers. The order of a POWHEG run is " + str(stages) + ": ") 
+    if not any(choice == str(x) for x in stages):
+        print "This is not a valid choice. Abort!"
+        exit(0)
     
     for n, stage in enumerate(stages):
+        
+        if choice == '11':
+            True
+        elif choice == '12':
+            if n == 0: continue
+        elif choice == '13':
+            if any(n == x for x in [0,1]): continue
+        elif choice == '2':
+            if any(n == x for x in [0,1,2]): continue
+        elif choice == '31':
+            if any(n == x for x in [0,1,2,3]): continue
+        elif choice == '32':
+            if any(n == x for x in [0,1,2,3,4]): continue
+        elif choice == '4':
+            if any(n == x for x in [0,1,2,3,4,5]): continue
+            
     	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
         # change the powheg.input file for each process according to the stage
         change_inputfile(stage, processes)
@@ -56,24 +78,23 @@ def submit_handler(nbatches, processes, finalization = False):
         jobids =[]
         
         for iprocess, process in enumerate(processes):
+            work_dir = os.getcwd()
+            process = os.path.abspath(process)
             
             if n == 0:
-	            # check if old pwggridinfo*.dat, pwg-*.top, pwggrid*.dat, pwgfullgrid*.dat, pwgubound*.dat  files from previous generation exists
-	            # if they exist, remove them to make sure to preserve a statistically independent generation process
-	            print 'Checking for old generation remnants ......\n'
-	            work_dir = os.getcwd()
-
-	            process = os.path.abspath(process)
-	            
-	            os.chdir(process)
-	            genfiles = glob('pwggrid*.dat')
-	            genfiles += glob('pwg*.top')
-	            genfiles += glob('pwgfullgrid*.dat')
-	            genfiles += glob('pwgubound*.dat')
-	            genfiles = [os.path.abspath(x) for x in genfiles]
-	            for genfile in genfiles:
-	                os.remove(genfile)
-	            print 'Generation remnants removed. Can start clean generation.\n'
+                # check if old pwggridinfo*.dat, pwg-*.top, pwggrid*.dat, pwgfullgrid*.dat, pwgubound*.dat  files from previous generation exists
+                # if they exist, remove them to make sure to preserve a statistically independent generation process
+                print 'Checking for old generation remnants ......\n'
+                
+                os.chdir(process)
+                genfiles = glob('pwggrid*.dat')
+                genfiles += glob('pwg*.top')
+                genfiles += glob('pwgfullgrid*.dat')
+                genfiles += glob('pwgubound*.dat')
+                genfiles = [os.path.abspath(x) for x in genfiles]
+                for genfile in genfiles:
+                    os.remove(genfile)
+                print 'Generation remnants removed. Can start clean generation.\n'
             
             # define which scripts should be submitted
             process_name = os.path.basename(process)
@@ -95,7 +116,7 @@ def submit_handler(nbatches, processes, finalization = False):
             print 'Setting job porperties ... \n'
             bc = batchConfig_base()
             bc.diskspace = 3000000
-            bc.runtime = int(1.5*86400) #n times 24h 
+            bc.runtime = int(3*86400) #n times 24h 
             
             # submit the batches in the current stage as an arrayjob to the cluster
             print 'Submitting jobs ... \n'
@@ -109,6 +130,12 @@ def submit_handler(nbatches, processes, finalization = False):
         print 'Waiting for jobs to finish ... \n'
         bc.do_qstat(jobids)
         print 'Parallelstage ' + str(stage) + ' finished. \n'
+        
+        # in case there are problems with waiting
+        print 'Start the next parallelstage by hand. Abort!'
+        message = "Parallelstage "+str(stage)+ ' finished'
+        subprocess.Popen(['notify-send', message])
+        exit(0)
         
     # last step: if all generation steps are finished, move the generated events .lhe and the pwgseeds.dat into the Gendata directory
     print 'All generation steps finished. Finalizing ...\n'

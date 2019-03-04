@@ -24,6 +24,22 @@ def make_seeds (nbatches, processes):
         os.chdir(os.path.abspath(process))
         # make the seedfile, if already a seedfile exists, rename it and make a new one afterwards
         seedfile = os.path.join(process, "pwgseeds.dat")
+        if os.path.exists(os.path.abspath(seedfile)):
+            print "The seedfile pwgseeds.dat alread exists. Do you want to overwrite it?"
+            confirmation = raw_input("y/n ")
+            if any(confirmation == x for x in ["y","Y","yes","Yes", "YES"]):
+                print "are you sure?"
+                confirmation = raw_input("y/n ")
+                if any(confirmation == x for x in ["y","Y","yes","Yes", "YES"]):
+                    print "Overwriting pwgseeds.dat"
+                else:
+                    print "Keeping old pwgseeds.dat" 
+                    os.chdir(work_dir)
+                    continue
+            else:
+                print "Keeping old pwgseeds.dat"
+                os.chdir(work_dir)
+                continue
         seedfile_old = os.path.join(process, "old_pwgseeds.dat")
         if os.path.isfile(os.path.abspath(seedfile)):
             if os.path.exists(seedfile_old):

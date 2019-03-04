@@ -4,7 +4,7 @@ import subprocess
 
 
 # change the input file accoring to the stage of parallel run performing
-def change_inputfile (stage, processes):
+def change_inputfile(stage, processes):
     
     for process in processes:
         
@@ -39,17 +39,17 @@ def change_inputfile (stage, processes):
             
         # compute NLO and upper bounding envelope for the generation of the underlying born configurations
         elif str(stage) == str(2):
-            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 2\" >> powheg.input'
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 2\" >> powheg.input; echo \"xgriditeration 1\" >> powheg.input'
             subprocess.call(cmd, shell = True)
             
         # compute upper bounding coefficients for radiation
-        elif str(stage) == str(3):
-            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 3\" >> powheg.input'
+        elif str(stage) == str(31) or str(stage) == str(32):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 3\" >> powheg.input; echo \"xgriditeration 1\" >> powheg.input'
             subprocess.call(cmd, shell = True)
             
         # generate events
         elif str(stage) == str(4):
-            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 4\" >> powheg.input'
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 4\" >> powheg.input; echo \"xgriditeration 1\" >> powheg.input'
             subprocess.call(cmd, shell = True)
         os.chdir(workdir)
 
