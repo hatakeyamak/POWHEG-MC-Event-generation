@@ -296,7 +296,7 @@ class batchConfig_base(object):
         else:
             submitCode+="error = "+logdir+"/"+submitScript+".$(Cluster).err\n"
             submitCode+="output = "+logdir+"/"+submitScript+".$(Cluster).out\n"
-            #submitCode+="log = "+logdir+"/"+submitScript+".$(Cluster).log\n"
+            submitCode+="log = "+logdir+"/"+submitScript+".$(Cluster).log\n"
             submitCode+="queue"
 
         submitFile = open(submitPath, "w")
