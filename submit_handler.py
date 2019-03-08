@@ -67,7 +67,7 @@ def submit_handler(nbatches, processes, finalization = False):
         elif choice == '15':
             if any(n == x for x in [0,1,2,3]): continue
         elif choice == '16':
-            if any(n == x for x in [0,1],2,3,4): continue
+            if any(n == x for x in [0,1,2,3,4): continue
         elif choice == '17':
             if any(n == x for x in [0,1,2,3,4,5]): continue
         elif choice == '18':
