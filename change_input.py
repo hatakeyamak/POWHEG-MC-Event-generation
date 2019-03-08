@@ -37,6 +37,31 @@ def change_inputfile(stage, processes):
             cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 3\" >> powheg.input'
             subprocess.call(cmd, shell = True)
             
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(14):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 4\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
+            
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(15):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 5\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
+            
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(16):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 6\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
+            
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(17):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 7\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
+            
+        # stage 1.3: parallelstage 1 xgriditeration 3
+        elif str(stage) == str(18):
+            cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 1\" >> powheg.input; echo \"xgriditeration 8\" >> powheg.input'
+            subprocess.call(cmd, shell = True)
+            
         # compute NLO and upper bounding envelope for the generation of the underlying born configurations
         elif str(stage) == str(2):
             cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 2\" >> powheg.input; echo \"xgriditeration 1\" >> powheg.input'

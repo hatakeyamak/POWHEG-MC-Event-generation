@@ -45,7 +45,7 @@ def submit_handler(nbatches, processes, finalization = False):
     
     # 3rd step: change the in the process directory already existing powheg.input file to the accoring parallel stage and start the script
     # number of POWHEG generation stages: default 5 stages in parallel generation (see change_input.py for more info)
-    stages = [11, 12, 13, 2, 31, 32, 4]
+    stages = [11, 12, 13,14,15,16,17,18, 2, 31, 32, 4]
     choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4"]
     choice_stages = dict(zip(choices, stages))
     print "With which stage do you want to start the generation? Choose:", choice_stages
@@ -62,14 +62,24 @@ def submit_handler(nbatches, processes, finalization = False):
             if n == 0: continue
         elif choice == '13':
             if any(n == x for x in [0,1]): continue
-        elif choice == '2':
+        elif choice == '14':
             if any(n == x for x in [0,1,2]): continue
-        elif choice == '31':
+        elif choice == '15':
             if any(n == x for x in [0,1,2,3]): continue
-        elif choice == '32':
-            if any(n == x for x in [0,1,2,3,4]): continue
-        elif choice == '4':
+        elif choice == '16':
+            if any(n == x for x in [0,1],2,3,4): continue
+        elif choice == '17':
             if any(n == x for x in [0,1,2,3,4,5]): continue
+        elif choice == '18':
+            if any(n == x for x in [0,1,2,3,4,5,6]): continue
+        elif choice == '2':
+            if any(n == x for x in [0,1,2,3,4,5,6,7]): continue
+        elif choice == '31':
+            if any(n == x for x in [0,1,2,3,4,5,6,7,8]): continue
+        elif choice == '32':
+            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9]): continue
+        elif choice == '4':
+            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10]): continue
             
     	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
         # change the powheg.input file for each process according to the stage
