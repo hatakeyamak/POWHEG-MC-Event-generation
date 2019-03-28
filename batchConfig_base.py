@@ -1,12 +1,12 @@
-from ROOT import TStopwatch, PyConfig, gROOT
-PyConfig.IgnoreCommandLineOptions = True
-gROOT.SetBatch(True)
 import os
 import sys
 import subprocess
 import stat
 import shutil
 import time
+from ROOT import TStopwatch, PyConfig, gROOT
+PyConfig.IgnoreCommandLineOptions = True
+gROOT.SetBatch(True)
 
 class batchConfig_base(object):
     """
@@ -20,9 +20,9 @@ class batchConfig_base(object):
             ...
         }
     }
-    When a batchConfig object is initialized, the class check whether 'hostkeyword' is part of the hostname.
-    If it is not specified, the default is used (currently HTCondor). You can add options for a host using
-    the function 'addhost'.
+    When a batchConfig object is initialized, the class checks whether 'hostkeyword' is part of the hostname.
+    If it is not specified, the default is used (currently HTCondor as used on DESY NAF). 
+    You can add options for a host using the function 'addhost'.
 
     Current list of options that can be set:
     queue       --  queue that is to be used (on old lxplus batch)
@@ -46,9 +46,9 @@ class batchConfig_base(object):
     subopts_.append("run_as_owner = true")
     subopts_.append("max_retries = 3")
     subopts_.append("retry_until = ExitCode == 0")
-    subopts_.append("RequestMemory = 2500")
-    subopts_.append("+RequestRuntime = 86400")
-    subopts_.append("RequestDisk = 2000000")
+    # subopts_.append("RequestMemory = 2500")
+    # subopts_.append("+RequestRuntime = 86400")
+    # subopts_.append("RequestDisk = 2000000")
 
     # print temp_
     # print temp_.split("\n")
@@ -238,6 +238,7 @@ class batchConfig_base(object):
         if isinstance(value, float) or isinstance(value, int):
             test = str(value)
         elif isinstance(value, str):
+            value = unicode(value, "utf-8")
             if value.isnumeric(): test = value
         else:
             print "Input value is not a number, could not set runtime!"
@@ -251,7 +252,8 @@ class batchConfig_base(object):
         slist += ["\tqueue_ = "+self.queue_]
         slist += ["\tsubname_ = "+ self.subname_]
         slist += ["\tarraysubmit_ = " + str(self.arraysubmit_)]
-        slist += ["\tsubopts_ = [\n\t" + "\n\t ".join(self.subopts_) + "\n\t]"]
+        slist += ["\tsubopts_ = [\n" + "\t,\n".join(self.subopts_) + "]"]
+        slist += ["\tmemory_ = "+ self.memory_]
         slist += ["\tjobmode_ = " + self.jobmode_]
         return "\n".join(slist)
 
@@ -287,8 +289,7 @@ class batchConfig_base(object):
         if isArray:
             submitCode+="error = "+logdir+"/"+submitScript+".$(Cluster)_$(ProcId).err\n"
             submitCode+="output = "+logdir+"/"+submitScript+".$(Cluster)_$(ProcId).out\n"
-            if self.jobmode_ == "lxplus_HTC":
-                submitCode+="log = "+logdir+"/"+submitScript+".$(Cluster)_$(ProcId).log\n"
+            submitCode+="log = "+logdir+"/"+submitScript+".$(Cluster)_$(ProcId).log\n"
             submitCode+="Queue Environment From (\n"
             for taskID in range(nscripts):
                 submitCode+="\"SGE_TASK_ID="+str(taskID)+"\"\n"
@@ -447,14 +448,17 @@ class batchConfig_base(object):
         dirname = os.path.dirname(script)
         os.chmod(script, st.st_mode | stat.S_IEXEC)
         cmdlist = [self.subname_]
+        logdir = os.path.join(dirname, "logs")
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
         if self.jobmode_ == "HTC":
             hold = True if jobid else False
-            submitPath = self.writeSubmitCode(script, dirname+"/logs", hold = hold)
+            submitPath = self.writeSubmitCode(script, logdir, hold = hold)
             cmdlist.append("-terse")
             cmdlist.append(submitPath)
         else:
             cmdlist += self.subopts_
-            temp = "-o {0}/log.out -e {0}/log.err".format(dirname)
+            temp = "-o {0}/log.out -e {0}/log.err".format(logdir)
             cmdlist += temp.split()
             if jobid:
                 cmdlist.append("-hold_jid")
