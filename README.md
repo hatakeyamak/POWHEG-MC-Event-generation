@@ -42,7 +42,8 @@ cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-B
 ```
 Next do
 ```console
-cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/{*fullgrid*,*pwgubound*} /path/to/POWHEG-BOX-RES/ttbb
+cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*fullgrid* /path/to/POWHEG-BOX-RES/ttbb
+cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*pwgubound* /path/to/POWHEG-BOX-RES/ttbb
 ```
 to prepare the generation of events in parallelstage 4.
 
