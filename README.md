@@ -40,6 +40,11 @@ Copy the input config `powheg.input-save` and the reweighting file `pwg-rwl.dat`
 ```console
 cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-BOX-RES/ttbb
 ```
+Next do
+```console
+cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/{*fullgrid*,*pwgubound*} /path/to/POWHEG-BOX-RES/ttbb
+```
+to prepare the generation of events in parallelstage 4.
 
 ### Run the Powheg MC ttb-jets event generation
 Now everything should be prepared. First make sure you have a valid voms-proxy.
@@ -49,10 +54,13 @@ Start the event generation by executing
 python /path/to/powheg-event-generation/submit_handler.py 120 /path/to/POWHEG-BOX-RES/ttbb
 ```
 .
-The script will automatically produce the MC events in seven stages. 
-Each stage has to finish completely, before the next stage can start.
-Alternatively you could also execute the stages by hand. 
-This is only recommended for debugging and cross-checking.
+
+If you produce events for the first time, type in yes, to generate a new seedsfile. Next type in 4 to begin the generation in parallelstage 4.
+
+[//]The script will automatically produce the MC events in seven stages. 
+[//]Each stage has to finish completely, before the next stage can start.
+[//]Alternatively you could also execute the stages by hand. 
+[//]This is only recommended for debugging and cross-checking.
 
 
 # Documentation and Prescription :+1:
