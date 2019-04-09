@@ -52,7 +52,7 @@ Now everything should be prepared. First make sure you have a valid voms-proxy.
 Start a screen session and setup the environment described above and CMSSW.
 Start the event generation by executing
 ```console
-python /path/to/powheg-event-generation/submit_handler.py 120 /path/to/POWHEG-BOX-RES/ttbb
+python /path/to/powheg-event-generation/submit_handler.py 1000 /path/to/POWHEG-BOX-RES/ttbb
 ```
 .
 
