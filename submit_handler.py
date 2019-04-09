@@ -112,7 +112,7 @@ def submit_handler(nbatches, processes, finalization = False):
             os.chdir(target_dir)
             scripts = glob("*.sh")
             if stage == stages[-3]:                     # special treatment for the first parallelstage=3: produce *fullgrid* files on a single core
-                scripts = [os.path.abspath(scripts[0])]
+                scripts = [os.path.abspath(sorted(scripts)[0])]
             else:
                 scripts = [os.path.abspath(x) for x in scripts]
             
