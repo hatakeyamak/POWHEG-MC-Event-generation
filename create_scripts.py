@@ -5,8 +5,9 @@ import sys
 import os
 import stat
 import string
+from glob import glob
 
-def create_scripts (nbatches, processes):
+def create_scripts (nbatches, processes, decay = False):
     
     for process in processes:
         
@@ -23,9 +24,15 @@ def create_scripts (nbatches, processes):
         if not os.path.exists('./GenData/' + process_name):
             os.mkdir('./GenData/' + process_name)
         
+        # remove all already existing jobscripts in the GenData directory
+        os.chdir(os.path.join(os.path.abspath("./GenData/"), process_name))
+        for script in glob('*.sh'):
+            os.remove(script)
+        os.chdir(work_dir)
+        
         # generate a jobscript for each batch
         for batch in range(nbatches):
-            filename = os.path.abspath('./GenData/' + process_name) + '/jobscript_batch_' + str(batch+1) + '.sh'
+            filename = os.path.abspath('./GenData/' + process_name) + '/jobscript_batch_' + str(batch) + '.sh'
             if os.path.isfile(filename):
                 os.remove(filename)
             with open(filename, 'wb') as scriptfile:
@@ -37,7 +44,7 @@ def create_scripts (nbatches, processes):
                                        'export CMSSW_GIT_REFERENCE=/nfs/dust/cms/user/mhorzela/.cmsgit-cache\n', 
                                        'alias cd=\'cd -P\'\n', 
                                        'myvarcwd=$PWD\n', 
-                                       'cd /nfs/dust/cms/user/mhorzela/CMSSW_9_4_9/src\n', 
+                                       'cd /nfs/dust/cms/user/mhorzela/CMSSW/CMSSW_9_4_9/src\n', 
                                        'eval `scramv1 runtime -sh`\n', 
                                        'cd ~\n', 
                                        'echo "setup CMSSW_949 and stuff"\n', 
@@ -49,10 +56,12 @@ def create_scripts (nbatches, processes):
                                        'PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/fastjet/3.1.0/bin/\n', 
                                        'echo "setup POWHEG"\n\n'])
                 
-                scriptfile.writelines(['# run POWHEG process ' + str(process_name) + ' batch number ' + str(batch+1) + '\n',
+                scriptfile.writelines(['# run POWHEG process ' + str(process_name) + ' batch number ' + str(batch) + '\n',
                                        'cd ' + str(os.path.abspath(process)) + '\n'])
-
-                scriptfile.writelines(['echo ' + str(batch) + ' | ./pwhg_main' '\n'])
+                if decay == True:
+                    scriptfile.writelines(['echo pwgevents-' + str(batch).zfill(4) + '.lhe | ./lhef_decay' '\n'])
+                else:
+                    scriptfile.writelines(['echo ' + str(batch) + ' | ./pwhg_main' '\n'])
 
                 scriptfile.write('cd ' + str(os.path.abspath(work_dir)))
                 

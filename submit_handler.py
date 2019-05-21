@@ -32,54 +32,75 @@ from create_scripts import create_scripts
 
 def submit_handler(nbatches, processes, finalization = False):
     
+    runtime = 86400 #24h
     # 1st step: make the seed files (make_seeds) for the according process in POWHEG-BOX-[version]/[ProcessName]/pwgseeds.dat
     if not os.path.isfile(os.path.realpath(processes[0])):
         make_seeds(nbatches, processes)
         print 'Powheg seeds initialized!\n'
         
+    stages = [11, 12, 13,14,15,16,17,18, 2, 31, 32, 4, "decay"]
+    choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4", "decay"]
+    choice_stages = dict(zip(choices, stages))
+    print "With which stage do you want to start the generation? Choose:", choice_stages
+    choice = raw_input("Type one of the numbers or \"decay\". The order of a POWHEG run is [" + " ".join([str(x) for x in stages]) + "]: ")
+    if not any(choice == str(x) for x in stages):
+        print "This is not a valid choice. Abort!"
+        exit(0)
+
     
     # 2nd step: create the submit scripts (create_scripts): current_dir/GenData/[ProcessName]/jobscript_batch_[BatchNumber]
-    create_scripts(nbatches, processes)
+    if choice == 'decay':
+        create_scripts(nbatches, processes, decay = True)
+    else:
+        create_scripts(nbatches, processes)
     print 'Jobscripts written!\n'
     
     
     # 3rd step: change the in the process directory already existing powheg.input file to the accoring parallel stage and start the script
     # number of POWHEG generation stages: default 5 stages in parallel generation (see change_input.py for more info)
-    stages = [11, 12, 13,14,15,16,17,18, 2, 31, 32, 4]
-    choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4"]
-    choice_stages = dict(zip(choices, stages))
-    print "With which stage do you want to start the generation? Choose:", choice_stages
-    choice = raw_input("Type one of the numbers. The order of a POWHEG run is [" + " ".join([str(x) for x in stages]) + "]: ")
-    if not any(choice == str(x) for x in stages):
-        print "This is not a valid choice. Abort!"
-        exit(0)
     
     for n, stage in enumerate(stages):
         
         if choice == '11':
+            runtime = 86400
             True
         elif choice == '12':
+            runtime = 86400
             if n == 0: continue
         elif choice == '13':
+            runtime = 86400
             if any(n == x for x in [0,1]): continue
         elif choice == '14':
+            runtime = 86400
             if any(n == x for x in [0,1,2]): continue
         elif choice == '15':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3]): continue
         elif choice == '16':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3,4]): continue
         elif choice == '17':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3,4,5]): continue
         elif choice == '18':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3,4,5,6]): continue
         elif choice == '2':
+            runtime = 3*86400
             if any(n == x for x in [0,1,2,3,4,5,6,7]): continue
         elif choice == '31':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3,4,5,6,7,8]): continue
         elif choice == '32':
+            runtime = 86400
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9]): continue
         elif choice == '4':
+            runtime = 3*86400
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10]): continue
+        elif choice == 'decay':
+            runtime = 3600
+            stage = "decay"
+            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10,11]): continue
             
     	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
         # change the powheg.input file for each process according to the stage
@@ -96,6 +117,7 @@ def submit_handler(nbatches, processes, finalization = False):
                 # if they exist, remove them to make sure to preserve a statistically independent generation process
                 print 'Checking for old generation remnants ......\n'
                 
+                #TODO apply right deletions for the according stages
                 os.chdir(process)
                 genfiles = glob('pwggrid*.dat')
                 genfiles += glob('pwg*.top')
@@ -125,8 +147,8 @@ def submit_handler(nbatches, processes, finalization = False):
             # set the job properties
             print 'Setting job porperties ... \n'
             bc = batchConfig_base()
-            bc.diskspace = 3000000
-            bc.runtime = int(3*86400) #n times 24h 
+            bc.diskspace = 4000000
+            bc.runtime = int(runtime) #n times 24h 
             
             # submit the batches in the current stage as an arrayjob to the cluster
             print 'Submitting jobs ... \n'

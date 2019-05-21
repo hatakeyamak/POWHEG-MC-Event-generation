@@ -76,6 +76,11 @@ def change_inputfile(stage, processes):
         elif str(stage) == str(4):
             cmd = 'cat powheg.input-save > powheg.input; echo \"parallelstage 4\" >> powheg.input; echo \"xgriditeration 1\" >> powheg.input'
             subprocess.call(cmd, shell = True)
+        
+        # decay event files
+        elif str(stage) == "decay":
+            print 'For decay no change in Input file needed.\n'
+            
         os.chdir(workdir)
 
 
