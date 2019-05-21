@@ -79,7 +79,8 @@ def change_inputfile(stage, processes):
         
         # decay event files
         elif str(stage) == "decay":
-            print 'For decay no change in Input file needed.\n'
+            cmd = 'cat powheg.input-save > powheg.input'
+            subprocess.call(cmd, shell = True)
             
         os.chdir(workdir)
 
