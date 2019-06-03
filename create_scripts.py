@@ -59,7 +59,9 @@ def create_scripts (nbatches, processes, decay = False):
                 scriptfile.writelines(['# run POWHEG process ' + str(process_name) + ' batch number ' + str(batch) + '\n',
                                        'cd ' + str(os.path.abspath(process)) + '\n'])
                 if decay == True:
-                    scriptfile.writelines(['echo pwgevents-' + str(batch).zfill(4) + '.lhe | ./lhef_decay' '\n'])
+                    scriptfile.writelines(['echo pwgevents-' + str(batch).zfill(4) + '.lhe | ./lhef_decay\n',
+                                            'echo "</LesHouchesEvents>" | gzip - | cat - >> pwgevents-' + str(batch).zfill(4) + '-decayed.lhe \n'])
+                    
                 else:
                     scriptfile.writelines(['echo ' + str(batch) + ' | ./pwhg_main' '\n'])
 
