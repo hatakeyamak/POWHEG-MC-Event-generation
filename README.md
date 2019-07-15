@@ -41,15 +41,15 @@ Copy the input config `powheg.input-save` and the reweighting file `pwg-rwl.dat`
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/* /path/to/POWHEG-BOX-RES/ttbb
 ```
 
-[//]cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-BOX-RES/ttbb
+[//]: # cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-BOX-RES/ttbb
 
 Next do
 ```console
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/* /path/to/POWHEG-BOX-RES/ttbb
 ```
 
-[//]cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*fullgrid* /path/to/POWHEG-BOX-RES/ttbb
-[//]cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*pwgubound* /path/to/POWHEG-BOX-RES/ttbb
+[//]: # cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*fullgrid* /path/to/POWHEG-BOX-RES/ttbb
+[//]: # cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*pwgubound* /path/to/POWHEG-BOX-RES/ttbb
 
 to prepare the generation of events in parallelstage 4.
 
@@ -64,10 +64,10 @@ python /path/to/powheg-event-generation/submit_handler.py 1000 /path/to/POWHEG-B
 
 If you produce events for the first time, type in yes, to generate a new seedsfile. Next type in 4 to begin the generation in parallelstage 4.
 
-[//]The script will automatically produce the MC events in seven stages. 
-[//]Each stage has to finish completely, before the next stage can start.
-[//]Alternatively you could also execute the stages by hand. 
-[//]This is only recommended for debugging and cross-checking.
+[//]: # The script will automatically produce the MC events in seven stages. 
+[//]: # Each stage has to finish completely, before the next stage can start.
+[//]: # Alternatively you could also execute the stages by hand. 
+[//]: # This is only recommended for debugging and cross-checking.
 
 
 # Documentation and Prescription :+1:
