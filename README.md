@@ -40,12 +40,14 @@ Copy the input config `powheg.input-save` and the reweighting file `pwg-rwl.dat`
 ```console
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/* /path/to/POWHEG-BOX-RES/ttbb
 ```
+
 [//]cp /nfs/dust/cms/user/mhorzela/{pwg-rwl.dat,powheg.input-save} /path/to/POWHEG-BOX-RES/ttbb
 
 Next do
 ```console
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/* /path/to/POWHEG-BOX-RES/ttbb
 ```
+
 [//]cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*fullgrid* /path/to/POWHEG-BOX-RES/ttbb
 [//]cp /nfs/dust/cms/user/matsch/ttbb_production/POWHEG-BOX-RES/ttbb/*pwgubound* /path/to/POWHEG-BOX-RES/ttbb
 
