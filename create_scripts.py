@@ -5,6 +5,7 @@ import sys
 import os
 import stat
 import string
+import subprocess
 from glob import glob
 
 def create_scripts (nbatches, processes, decay = False):
@@ -41,13 +42,13 @@ def create_scripts (nbatches, processes, decay = False):
                                        '#module use -a /afs/desy.de/group/cms/modulefiles/\n', 
                                        'export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch\n', 
                                        'source $VO_CMS_SW_DIR/cmsset_default.sh\n', 
-                                       'export CMSSW_GIT_REFERENCE=/nfs/dust/cms/user/mhorzela/.cmsgit-cache\n', 
+                                       'export CMSSW_GIT_REFERENCE=/nfs/dust/cms/user/'+subprocess.check_output(['bash','-c', 'echo $USER'])+'/.cmsgit-cache\n', 
                                        'alias cd=\'cd -P\'\n', 
                                        'myvarcwd=$PWD\n', 
-                                       'cd /nfs/dust/cms/user/mhorzela/CMSSW/CMSSW_9_4_9/src\n', 
+                                       'cd '+subprocess.check_output(['bash','-c', 'echo ${CMSSW_BASE}'])+'/src\n', 
                                        'eval `scramv1 runtime -sh`\n', 
                                        'cd ~\n', 
-                                       'echo "setup CMSSW_949 and stuff"\n', 
+                                       'echo "setup CMSSW_10_2_14 and stuff"\n', 
                                        'cd $myvarcwd\n\n', 
                                        '#add the LHAPDF library path to PATH\n', 
                                        'PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/\n', 
