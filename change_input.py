@@ -4,16 +4,15 @@ import subprocess
 
 
 # change the input file accoring to the stage of parallel run performing
-def change_inputfile(stage, processes):
+def change_inputfile(stage, process, mass, pdf, renscfact, facscfact):
     
-    for process in processes:
         
         process = os.path.abspath(process)
         
         # check if given argument is a process directory in POWHEG-BOX-V2
-        if not(os.path.isdir(process)) or  'POWHEG' not in os.path.dirname(process):
+        if 'POWHEG' not in os.path.dirname(process):
             print 'Argument ' + str(process) + ' is not a POWHEG process directory' + '\njob aborted'
-            continue
+            sys.exit()
         
         if not os.path.isfile(os.path.join(process, 'powheg.input-save')):
             print 'Template powheg.input-save doesn\'t exist, make sure it does, if you want to run POWHEG in parallel mode.'
@@ -82,6 +81,17 @@ def change_inputfile(stage, processes):
             cmd = 'cat powheg.input-save > powheg.input'
             subprocess.call(cmd, shell = True)
             
+        # set top mass to run value
+        cmd = 'echo \"topmass '+mass+'\" >> powheg.input'
+        subprocess.call(cmd, shell = True)
+        # set both incomming PDFs to the run value
+        cmd = 'echo \"lhans1 '+pdf+'\" >> powheg.input; echo \"lhans2 '+pdf+'\" >> powheg.input'
+        subprocess.call(cmd, shell = True)
+
+        # set renormalization scale muR and factorization scale muF 
+        cmd = 'echo \"renscfact '+str(renscfact)+'\" >> powheg.input; echo \"facscfact '+str(facscfact)+'\" >> powheg.input'
+        subprocess.call(cmd, shell = True)
+
         os.chdir(workdir)
 
 
@@ -91,10 +101,14 @@ def main (args = sys.argv[1:]):
         print 'Wrong usage! First argument has to be the stage number: \n[1] for importance sampling grid calculation (1st step) \n   optional: [1.1] or [1.2] for the iteration of the grid \n[2] for NLO and upper bounding envelope (2nd step) \n[3] for upper bounding coefficients \n [4] for event generation \nAbort!'
         exit(0)
         
-    stage = int(args[0])
-    processes = args[1:]
+    stage   = int(args[0])
+    process = args[1]
+    mass    = args[2]
+    pdf     = args[3]
+    renscfact   = float(args[4])
+    facscfact   = float(args[5])
     
-    change_inputfile (stage = stage, processes = processes)
+    change_inputfile (stage = stage, process = process, mass = mass, pdf = pdf, renscfact = renscfact, facscfact = renscfact)
     
 
 if __name__ == '__main__':

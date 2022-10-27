@@ -131,6 +131,8 @@ class batchConfig_base(object):
             attribute = "+RequestRunTime"
         elif attribute == "memory":
             attribute = "RequestMemory"
+        elif attribute == "jobFlavor":
+            attribute = "+JobFlavour"
         index = self.get_index_for_attribute(attribute)
         if index != None:
             self.subopts_.pop(index)
@@ -245,6 +247,47 @@ class batchConfig_base(object):
 
         if not test == None:
             self.setoption(attribute = "+RequestRuntime", optionsstring = str(value))
+
+    @property
+    def jobFlavor(self):
+        """
+        Return value for '+RequestRuntime' keyword in 'subopts' if it's available
+        """
+        index = self.get_index_for_attribute("+JobFlavour")
+        return self.subopts_[index].split(" = ")[-1]
+    @jobFlavor.setter
+    def jobFlavor(self, value):
+        """
+        First check if 'value' can be a float. Then call 'self.setoption' with the attribute '+RequestRuntime'
+        """
+        test = None
+        if isinstance(value, str):
+            value = unicode(value, "utf-8")
+            test = value
+        else:
+            print "Input value is not a string, could not set jobFlavor!"
+
+        if not test == None:
+            self.setoption(attribute = "+JobFlavour", optionsstring = str(value))
+
+    @property
+    def batch_name(self):
+        """
+        Return value for '+RequestRuntime' keyword in 'subopts' if it's available
+        """
+        index = self.get_index_for_attribute("batch_name")
+        return self.subopts_[index].split(" = ")[-1]
+    @batch_name.setter
+    def batch_name(self, value):
+        test = None
+        if isinstance(value, str):
+            value = unicode(value, "utf-8")
+            test = value
+        else:
+            print "Input value is not a string, could not set batch_name!"
+
+        if not test == None:
+            self.setoption(attribute = "batch_name", optionsstring = str(value))
     def __str__(self):
         """overload print(batchConfig_base) here"""
         slist = ["options for this batchConfig:"]

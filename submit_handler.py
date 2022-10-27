@@ -30,12 +30,17 @@ from create_scripts import create_scripts
 
 
 
-def submit_handler(nbatches, processes, finalization = False):
+def submit_handler(nbatches, process, mass, pdf, renscfact, facscfact, finalization = False):
     
+    process = process+'/run_PDF_'+pdf+'_M_'+mass+"_muR_"+str(renscfact)+"_muF_"+str(facscfact)
+    if not os.path.exists(process):
+        os.mkdir(process)
+
     runtime = 86400 #24h
+    runtimeString = ''
     # 1st step: make the seed files (make_seeds) for the according process in POWHEG-BOX-[version]/[ProcessName]/pwgseeds.dat
-    if not os.path.isfile(os.path.realpath(processes[0])):
-        make_seeds(nbatches, processes)
+    if not os.path.isfile(os.path.realpath(process)):
+        make_seeds(nbatches, process)
         print 'Powheg seeds initialized!\n'
         
     stages = [11, 12, 13,14,15,16,17,18, 2, 31, 32, 4, "decay"]
@@ -50,9 +55,9 @@ def submit_handler(nbatches, processes, finalization = False):
     
     # 2nd step: create the submit scripts (create_scripts): current_dir/GenData/[ProcessName]/jobscript_batch_[BatchNumber]
     if choice == 'decay':
-        create_scripts(nbatches, processes, decay = True)
+        create_scripts(nbatches, process, mass, pdf, decay = True)
     else:
-        create_scripts(nbatches, processes)
+        create_scripts(nbatches, process, mass, pdf)
     print 'Jobscripts written!\n'
     
     
@@ -63,153 +68,171 @@ def submit_handler(nbatches, processes, finalization = False):
         
         if choice == '11':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             True
         elif choice == '12':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if n == 0: continue
         elif choice == '13':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1]): continue
         elif choice == '14':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2]): continue
         elif choice == '15':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3]): continue
         elif choice == '16':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4]): continue
         elif choice == '17':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5]): continue
         elif choice == '18':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6]): continue
         elif choice == '2':
             runtime = 3*86400
+            runtimeString = "\'testmatch\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7]): continue
         elif choice == '31':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8]): continue
         elif choice == '32':
             runtime = 86400
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9]): continue
         elif choice == '4':
             runtime = 2*86400
+            runtimeString = "\'testmatch\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10]): continue
         elif choice == 'decay':
             runtime = 3600
+            runtimeString = "\'longlunch\'"
             stage = "decay"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10,11]): continue
             
     	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
         # change the powheg.input file for each process according to the stage
-        change_inputfile(stage, processes)
+        change_inputfile(stage, process, mass, pdf, renscfact, facscfact )
         
         jobids =[]
         
-        for iprocess, process in enumerate(processes):
-            work_dir = os.getcwd()
-            process = os.path.abspath(process)
-            
-            if n == 0:
-                # check if old pwggridinfo*.dat, pwg-*.top, pwggrid*.dat, pwgfullgrid*.dat, pwgubound*.dat  files from previous generation exists
-                # if they exist, remove them to make sure to preserve a statistically independent generation process
-                print 'Checking for old generation remnants ......\n'
-                
-                #TODO apply right deletions for the according stages
-                os.chdir(process)
-                genfiles = glob('pwggrid*.dat')
-                genfiles += glob('pwg*.top')
-                genfiles += glob('pwgfullgrid*.dat')
-                genfiles += glob('pwgubound*.dat')
-                genfiles = [os.path.abspath(x) for x in genfiles]
-                for genfile in genfiles:
-                    os.remove(genfile)
-                print 'Generation remnants removed. Can start clean generation.\n'
-            
-            # define which scripts should be submitted
-            process_name = os.path.basename(process)
-            target_dir = os.path.join(work_dir, 'GenData', process_name)
-            os.chdir(target_dir)
-            scripts = glob("*.sh")
-            if stage == stages[-3]:                     # special treatment for the first parallelstage=3: produce *fullgrid* files on a single core
-                scripts = [os.path.abspath(sorted(scripts)[0])]
-            else:
-                scripts = [os.path.abspath(x) for x in scripts]
-            
-            # directory for the array scripts
-            foldername = "SubmitArrays"
-            if not os.path.exists(foldername):
-                os.mkdir(foldername)
-            os.chdir(foldername)
-            
-            # set the job properties
-            print 'Setting job porperties ... \n'
-            bc = batchConfig_base()
-            bc.diskspace = 4000000
-            bc.runtime = int(runtime) #n times 24h 
-            
-            # submit the batches in the current stage as an arrayjob to the cluster
-            print 'Submitting jobs ... \n'
-            arrayscriptpath = "stage_" + str(stage) + ".sh"
-            jobids += bc.submitArrayToBatch(scripts = scripts, arrayscriptpath = arrayscriptpath)
-            print 'Jobs submitted!\n'
-            
-            os.chdir(work_dir)
-            
-        # wait till the jobs are finished, before the next stage is started
-        print 'Waiting for jobs to finish ... \n'
-        bc.do_qstat(jobids)
-        print 'Parallelstage ' + str(stage) + ' finished. \n'
+
+        work_dir = os.getcwd()
+        process = os.path.abspath(process)
         
-        # in case there are problems with waiting
-        print 'Start the next parallelstage by hand. Abort!'
-        message = "Parallelstage "+str(stage)+ ' finished'
-        subprocess.Popen(['notify-send', message])
+        if n == 0:
+            # check if old pwggridinfo*.dat, pwg-*.top, pwggrid*.dat, pwgfullgrid*.dat, pwgubound*.dat  files from previous generation exists
+            # if they exist, remove them to make sure to preserve a statistically independent generation process
+            print 'Checking for old generation remnants ......\n'
+            
+            #TODO apply right deletions for the according stages
+            os.chdir(process)
+            genfiles = glob('pwggrid*.dat')
+            genfiles += glob('pwg*.top')
+            genfiles += glob('pwgfullgrid*.dat')
+            genfiles += glob('pwgubound*.dat')
+            genfiles = [os.path.abspath(x) for x in genfiles]
+            for genfile in genfiles:
+                os.remove(genfile)
+            print 'Generation remnants removed. Can start clean generation.\n'
+        
+        # define which scripts should be submitted
+        process_name = os.path.basename(process)
+
+        target_dir = os.path.join(work_dir, 'GenData', process_name)
+        os.chdir(target_dir)
+        scripts = glob("*.sh")
+
+        if stage == stages[-3]:                     # special treatment for the first parallelstage=3: produce *fullgrid* files on a single core
+            scripts = [os.path.abspath(sorted(scripts)[0])]
+        else:
+            scripts = [os.path.abspath(x) for x in scripts]
+        
+
+        # directory for the array scripts
+        foldername = "SubmitArrays"
+        if not os.path.exists(foldername):
+            os.mkdir(foldername)
+        os.chdir(foldername)
+        
+        # set the job properties
+        print 'Setting job porperties ... \n'
+        bc = batchConfig_base()
+        bc.batch_name = os.path.basename(process)
+        #bc.diskspace = 4000000
+        #bc.runtime = int(runtime) #n times 24h 
+        bc.jobFlavor = runtimeString
+        
+        # submit the batches in the current stage as an arrayjob to the cluster
+        print 'Submitting jobs ... \n'
+        arrayscriptpath = "stage_" + str(stage) + ".sh"
+        jobids += bc.submitArrayToBatch(scripts = scripts, arrayscriptpath = arrayscriptpath)
+        print 'Jobs submitted!\n'
+        
+        os.chdir(work_dir)
+            
+        # # wait till the jobs are finished, before the next stage is started
+        # print 'Waiting for jobs to finish ... \n'
+        # bc.do_qstat(jobids)
+        # print 'Parallelstage ' + str(stage) + ' finished. \n'
+        
+        # # in case there are problems with waiting
+        # print 'Start the next parallelstage by hand. Abort!'
+        # message = "Parallelstage "+str(stage)+ ' finished'
+        # subprocess.Popen(['notify-send', message])
         exit(0)
         
-    # last step: if all generation steps are finished, move the generated events .lhe and the pwgseeds.dat into the Gendata directory
-    print 'All generation steps finished. Finalizing ...\n'
-    if finalization:
-        finalize(processes)
+    # # last step: if all generation steps are finished, move the generated events .lhe and the pwgseeds.dat into the Gendata directory
+    # print 'All generation steps finished. Finalizing ...\n'
+    # if finalization:
+    #     finalize(process)
 
 
 
-def finalize(processes):
-    for process in processes:
+def finalize(process):
 
-            process = os.path.abspath(process)
-            process_name = os.path.basename(process)
-            work_dir = os.path.abspath(os.getcwd())
-            target_dir = os.path.join(work_dir, "GenData", process_name)
 
-            # get all the event .lhe files in process directory
-            os.chdir(process)
-            data_origin = glob('pwgevents-????.lhe')
-            data_origin = [os.path.abspath(x) for x in data_origin]
+    process = os.path.abspath(process)
+    process_name = os.path.basename(process)
+    work_dir = os.path.abspath(os.getcwd())
+    target_dir = os.path.join(work_dir, "GenData", process_name)
 
-            # check for the highest .lhe-file's batch number in target directory
-            os.chdir(target_dir)
-            data_target = glob('*.lhe')
-            highest = 0
-            for datafile in data_target:
-            	dataname = os.path.basename(datafile)
-            	numbers = re.search(r'\d+', dataname).group()
-            	if int(numbers) > highest: highest = int(numbers)
+    # get all the event .lhe files in process directory
+    os.chdir(process)
+    data_origin = glob('pwgevents-????.lhe')
+    data_origin = [os.path.abspath(x) for x in data_origin]
 
-            # put the datafiles into the GenData directory, rename the datafiles, if the batch number already exists
-            for datafile in data_origin:
-                dataname = os.path.basename(datafile)
-                numbers = re.search(r'\d+', dataname).group()                
-                dataname = dataname.replace(numbers, str(int(numbers)+ highest))                
-                os.rename(datafile, os.path.join(target_dir, dataname))
+    # check for the highest .lhe-file's batch number in target directory
+    os.chdir(target_dir)
+    data_target = glob('*.lhe')
+    highest = 0
+    for datafile in data_target:
+    	dataname = os.path.basename(datafile)
+    	numbers = re.search(r'\d+', dataname).group()
+    	if int(numbers) > highest: highest = int(numbers)
 
-            # also move the pwgseeds.dat file to the target directory and rename it according to the highest batch number
-            seedfile = os.path.abspath(os.path.join(process, 'pwgseeds.dat'))
-            os.rename(seedfile, os.path.join(target_dir, 'pwgseeds_batchnum>'+str(highest)+'.dat'))
-                
-            os.chdir(work_dir)
+    # put the datafiles into the GenData directory, rename the datafiles, if the batch number already exists
+    for datafile in data_origin:
+        dataname = os.path.basename(datafile)
+        numbers = re.search(r'\d+', dataname).group()                
+        dataname = dataname.replace(numbers, str(int(numbers)+ highest))                
+        os.rename(datafile, os.path.join(target_dir, dataname))
+
+    # also move the pwgseeds.dat file to the target directory and rename it according to the highest batch number
+    seedfile = os.path.abspath(os.path.join(process, 'pwgseeds.dat'))
+    os.rename(seedfile, os.path.join(target_dir, 'pwgseeds_batchnum>'+str(highest)+'.dat'))
+        
+    os.chdir(work_dir)
     
     print 'Finished! You can find all generated data and the seeds used for the generation within the GenData directory.'
 
@@ -221,9 +244,13 @@ def main(args = sys.argv[1:]):
         exit(0)
         
     nbatches = int(args[0])
-    processes = args[1:]
+    process = args[1]
+    mass    = args[2]
+    pdf     = args[3]
+    renscfact   = float(args[4])
+    facscfact   = float(args[5])
     
-    submit_handler (nbatches = nbatches, processes = processes, finalization = False)
+    submit_handler (nbatches = nbatches, process = process, mass = mass, pdf = pdf, renscfact = renscfact, facscfact = facscfact, finalization = False)
 
 
 

@@ -10,15 +10,14 @@ import random
 import string
 
 
-def make_seeds (nbatches, processes):
+def make_seeds (nbatches, process):
     
-    # loop over all given processes in the arguments
-    for process in processes:
+    # loop over all given process in the arguments
         process = os.path.abspath(process)
         # check if given argument is a process directory in POWHEG-BOX-V2
-        if not(os.path.isdir(process)) or  'POWHEG' not in os.path.dirname(process):
+        if 'POWHEG' not in os.path.dirname(process):
             print 'Argument ' + str(process) + ' is not a POWHEG process directory' + '\njob aborted'
-            continue
+            return
         # if it works go to process directory and write the seed file
         work_dir = os.getcwd()
         os.chdir(os.path.abspath(process))
@@ -35,11 +34,11 @@ def make_seeds (nbatches, processes):
                 else:
                     print "Keeping old pwgseeds.dat" 
                     os.chdir(work_dir)
-                    continue
+                    return
             else:
                 print "Keeping old pwgseeds.dat"
                 os.chdir(work_dir)
-                continue
+                return
         seedfile_old = os.path.join(process, "old_pwgseeds.dat")
         if os.path.isfile(os.path.abspath(seedfile)):
             if os.path.exists(seedfile_old):
@@ -60,9 +59,9 @@ def main (args = sys.argv[1:]):
     # first argument given is [NEVENTS]
     nbatches = int(args[0])
     # further arguments are the process specific directories
-    processes = args[1:]
+    processes = args[1]
     
-    make_seeds(nbatches = nbatches, processes = processes)
+    make_seeds(nbatches = nbatches, process = process)
     
     
 
