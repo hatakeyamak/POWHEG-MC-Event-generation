@@ -68,35 +68,35 @@ def submit_handler(nbatches, process, mass, pdf, renscfact, facscfact, finalizat
         
         if choice == '11':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             True
         elif choice == '12':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if n == 0: continue
         elif choice == '13':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1]): continue
         elif choice == '14':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2]): continue
         elif choice == '15':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3]): continue
         elif choice == '16':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4]): continue
         elif choice == '17':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5]): continue
         elif choice == '18':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6]): continue
         elif choice == '2':
             runtime = 3*86400
@@ -104,11 +104,11 @@ def submit_handler(nbatches, process, mass, pdf, renscfact, facscfact, finalizat
             if any(n == x for x in [0,1,2,3,4,5,6,7]): continue
         elif choice == '31':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8]): continue
         elif choice == '32':
             runtime = 86400
-            runtimeString = "\'workday\'"
+            runtimeString = "\'tomorrow\'"
             if any(n == x for x in [0,1,2,3,4,5,6,7,8,9]): continue
         elif choice == '4':
             runtime = 2*86400
