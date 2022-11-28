@@ -49,9 +49,11 @@ class Plot:
                     split_line = line.split()
                     self.xaxislowbound.append(float(split_line[0])) 
                     self.xaxishighbound.append(float(split_line[1]))
-                    xValue = (float(split_line[1])-float(split_line[0]))/2.
+                    xValue = (float(split_line[1])+float(split_line[0]))/2.
                     self.binEntries.append(DataPoint(xValue,float(split_line[2]),float(split_line[3]) ))
-                    # self.binUncert.append(float(split_line[3]))
+                    # print split_line[0], split_line[1] , split_line[2] , split_line[3]
+                    # print self.binEntries[-1].x, self.binEntries[-1].y , self.binEntries[-1].dy
+                    # # self.binUncert.append(float(split_line[3]))
                 elif 'INTGRL' in line:
                     self.integral = float(line.split('INTGRL =')[1].split()[0])
                 elif 'SET ORDER X Y' in line:   # Start data points
@@ -80,6 +82,12 @@ class Plot:
         highXArray  = array.array('d',self.xaxishighbound)
         lowXArray.append(highXArray[len(highXArray)-1])
         hist = ROOT.TH1D(self.title.replace(' ', '_'), self.title, len(lowXArray)-1, lowXArray)
+        # if "rho" in self.title:
+        #     newBinning = array.array('d',[0.0, 0.25,0.325,0.425,0.525,0.675,0.725,0.775,1.0])
+        #     hist = hist.Rebin(len(newBinning)-1, self.title.replace(' ', ''), newBinning)
+        #     c1 = ROOT.TCanvas()
+        #     hist.Draw("hist E")
+        #     c1.SaveAs("Test"+self.title.replace(' ', '')+".pdf")
         hist.GetXaxis().SetTitle(self.xaxistitle)
         hist.GetYaxis().SetTitle(self.yaxistitle)
         for datum in self.binEntries:
@@ -112,7 +120,7 @@ def top_2_root(inFilename, isGraph = False):
     ##############################
     #   Read-in topdrawer file   #
     ##############################
-    print "reading ", inFilename
+    # print "reading ", inFilename
     print "creating ", outFilename
     inFile = open(inFilename, 'r')
     top_plots, plot_lines = [], []
@@ -123,6 +131,7 @@ def top_2_root(inFilename, isGraph = False):
             plot_lines.append(line)
         elif plot_lines:
             top_plots.append(Plot(plot_lines))
+            plot_lines = []
         else:
             plot_lines = []
 

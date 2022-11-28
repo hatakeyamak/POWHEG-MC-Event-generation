@@ -32,7 +32,7 @@ def makeRootFiles (process , mass , pdf , renscfact , facscfact ):
         topFiles = glob("pwg-0*-NLO.top")
 
         for topFile in topFiles:
-            print "Processing ", topFile
+            # print "Processing ", topFile
             top_2_root(topFile)
 
         # After all top files are converted, the root files are hadded
@@ -82,6 +82,25 @@ def makeRootFiles (process , mass , pdf , renscfact , facscfact ):
         print 'All TOP files are converted and hadded ' + runFolder
         # status = os.stat(filename)
         # os.chmod(filename, status.st_mode | stat.S_IEXEC)
+
+        
+        os.chdir(work_dir)
+        outputFolder = "powheg_generations"
+        if not os.path.exists(outputFolder):
+            os.mkdir(outputFolder)
+
+
+        # os.chdir(outputFolder)
+        copy_folder = outputFolder +"/"+process_name
+        print "Copying files to " + copy_folder 
+        if not os.path.exists(copy_folder):
+            os.mkdir(copy_folder)
+
+        cmd = "cp "+ process +"/" + targetFile +" "+ copy_folder+"/."
+        subprocess.call(cmd, shell = True)
+
+        os.chdir(work_dir)
+
                 
 def main (args = sys.argv[1:]):
         
