@@ -1,10 +1,6 @@
 
 workFolder=${PWD}
-# "y\ny\n11\n"
-prodStage1="y"
-prodStage2="y"
-prodStage3="12"
- 
+
 # PDFs=( $(seq 303000 303100) )
 # echo ${PDFs[@]}
 # for pdf in  ${PDFs[@]}; do

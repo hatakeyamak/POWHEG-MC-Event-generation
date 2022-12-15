@@ -81,7 +81,7 @@ class Plot:
         lowXArray   = array.array('d',self.xaxislowbound)
         highXArray  = array.array('d',self.xaxishighbound)
         lowXArray.append(highXArray[len(highXArray)-1])
-        hist = ROOT.TH1D(self.title.replace(' ', '_'), self.title, len(lowXArray)-1, lowXArray)
+        hist = ROOT.TH1D(self.title.replace(' ', ''), self.title, len(lowXArray)-1, lowXArray)
         # if "rho" in self.title:
         #     newBinning = array.array('d',[0.0, 0.25,0.325,0.425,0.525,0.675,0.725,0.775,1.0])
         #     hist = hist.Rebin(len(newBinning)-1, self.title.replace(' ', ''), newBinning)
