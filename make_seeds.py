@@ -2,68 +2,36 @@
 Create the seed file pwgseeds.dat for a given number of batches and given processes, which is needed for running POWHEG with the manyseedsflag 
 '''
 
-
-
 import sys
 import os
 import random
 import string
 
+def make_seeds(nbatches, run_dir):
+    seed_file = os.path.join(run_dir, "pwgseeds.dat")
+    make_seeds = True
+    if os.path.exists(seed_file):
+        print(f"A seed file already exists in your run directory - do you want to regenerate the seeds for your current run?")
+        choice = input("y/n ")
+        if choice[0].lower() == "y":
+            os.remove(seed_file)
+        else:
+            make_seeds = False
 
-def make_seeds (nbatches, process):
-    
-    # loop over all given process in the arguments
-        process = os.path.abspath(process)
-        # check if given argument is a process directory in POWHEG-BOX-V2
-        if 'POWHEG' not in os.path.dirname(process):
-            print 'Argument ' + str(process) + ' is not a POWHEG process directory' + '\njob aborted'
-            return
-        # if it works go to process directory and write the seed file
-        work_dir = os.getcwd()
-        os.chdir(os.path.abspath(process))
-        # make the seedfile, if already a seedfile exists, rename it and make a new one afterwards
-        seedfile = os.path.join(process, "pwgseeds.dat")
-        if os.path.exists(os.path.abspath(seedfile)):
-            print "The seedfile pwgseeds.dat alread exists. Do you want to overwrite it?"
-            confirmation = raw_input("y/n ")
-            if any(confirmation == x for x in ["y","Y","yes","Yes", "YES"]):
-                print "are you sure?"
-                confirmation = raw_input("y/n ")
-                if any(confirmation == x for x in ["y","Y","yes","Yes", "YES"]):
-                    print "Overwriting pwgseeds.dat"
-                else:
-                    print "Keeping old pwgseeds.dat" 
-                    os.chdir(work_dir)
-                    return
-            else:
-                print "Keeping old pwgseeds.dat"
-                os.chdir(work_dir)
-                return
-        seedfile_old = os.path.join(process, "old_pwgseeds.dat")
-        if os.path.isfile(os.path.abspath(seedfile)):
-            if os.path.exists(seedfile_old):
-                os.remove(seedfile_old)
-            os.rename(seedfile, seedfile_old)
-        with open(seedfile, 'wb') as textfile:
+    if not make_seeds:
+        # check that enough seeds are available if not regenerated
+        with open(seed_file, "r") as f:
+            n_seeds = len(f.readlines())
+        if n_seeds >= nbatches:
+            return seed_file
+        else:
+            print(f"Not enough seeds in the current seed file, aborting.")
+            exit()
+
+    if make_seeds:
+        print(f"Regenerating {nbatches} seeds...")
+        with open(seed_file, "w") as f:
             for i in range(nbatches):
-                textfile.write(str(random.randint(0, 99999999))+'\n')
-        os.chdir(work_dir)
+                f.write(f"{random.randint(0, 99999999)}\n")
+        return seed_file
     
-    
-    
-def main (args = sys.argv[1:]):
-    
-    if not(args[0].isdigit()):
-        print 'Wrong usage! First argument has to be an integer, representing the number of batches, further arguments should be a directory to a POWHEG process\nAbort!'
-        exit(0)
-    # first argument given is [NEVENTS]
-    nbatches = int(args[0])
-    # further arguments are the process specific directories
-    processes = args[1]
-    
-    make_seeds(nbatches = nbatches, process = process)
-    
-    
-
-if __name__ == '__main__':
-    main()

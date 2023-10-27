@@ -82,10 +82,10 @@ def change_inputfile(stage, process, mass, pdf, renscfact, facscfact):
             subprocess.call(cmd, shell = True)
             
         # set top mass to run value
-        cmd = 'echo \"topmass '+mass+'\" >> powheg.input'
+        cmd = 'echo \"topmass '+str(mass)+'\" >> powheg.input'
         subprocess.call(cmd, shell = True)
         # set both incomming PDFs to the run value
-        cmd = 'echo \"lhans1 '+pdf+'\" >> powheg.input; echo \"lhans2 '+pdf+'\" >> powheg.input'
+        cmd = 'echo \"lhans1 '+str(int(pdf))+'\" >> powheg.input; echo \"lhans2 '+str(pdf)+'\" >> powheg.input'
         subprocess.call(cmd, shell = True)
 
         # set renormalization scale muR and factorization scale muF 

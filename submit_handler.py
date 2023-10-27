@@ -1,258 +1,158 @@
 import sys
 import os
-from glob import glob
-import subprocess
-import re
 
-
-thisdir = os.path.dirname(os.path.realpath(__file__))
-thisdir = os.path.abspath(thisdir)
-
-# ~ classdir = os.path.join(thisdir, "base", "classes")
-
-# ~ # TODO: check for the submit script and add it
-# ~ if not classdir in sys.path:
-    # ~ sys.path.append(classdir)
-    
-from batchConfig_base import batchConfig_base
-
-
-# TODO: check if the other python functions for the generation process are in the right path and add them
-if not thisdir in sys.path:
-    sys.path.append(thisdir)
-    
-print "The current working directory is: ", sys.path
-
-from change_input import change_inputfile
 from make_seeds import make_seeds
-from create_scripts import create_scripts
 
+batch_shell_template = """
+#!/bin/bash
+export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
+source $VO_CMS_SW_DIR/cmsset_default.sh
+alias cd='cd -P'
 
+startdir=$PWD
+cd {cmssw_base}
+eval `scramv1 runtime -sh`
+cd $startdir
+echo 'CMSSW initialized'
 
+#add the LHAPDF library path to PATH
+PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+#add the FASTJET library path to PATH
+PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/fastjet/3.1.0/bin/
+echo 'POWHEG initialized'
 
-def submit_handler(nbatches, process, mass, pdf, renscfact, facscfact, finalization = False):
+# running powheg
+cd {run_dir}
+echo "Running batch job number $SGE_TASK_ID"
+"""
+
+submitTemplateT2B = """
+universe = vanilla
+executable = /bin/bash
+arguments = {arg}
+error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
+log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
+output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
+run_as_owner = true
++JobFlavour = {runtime}
+JobBatchName = {batchname}
+"""
+
+submitTemplateNAF = """
+universe = vanilla
+executable = /bin/bash
+arguments = {arg}
+error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
+log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
+output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
+run_as_owner = true
++RequestRuntime = {runtime}
+JobBatchName = {batchname}
+"""
+
+submitTemplateLXPLUS = """
+universe = vanilla
+executable = /bin/bash
+arguments = {arg}
+error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
+log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
+output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
+run_as_owner = true
++JobFlavour = {runtime}
+JobBatchName = {batchname}
+"""
+
+def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=False):
+    run_dir = settings["run_dir"]
+    seed_file = make_seeds(nbatches, run_dir)
+
+    # copy powheg.input file and adjust for the current stage
+    input_file = os.path.join(settings['run_dir'], 'powheg.input')
+    cmd = f"cp {settings['powheg.input']} {input_file}"
+    os.system(cmd)
+    # add stage to input file
+    cmd = f'echo "parallelstage {stage}" >> {input_file}'
+    os.system(cmd)
+    if int(stage) == 1:
+        cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
+        os.system(cmd)
+    print("The following configuration is now in the powheg.input file:\n")
+    os.system(f"tail -n 8 {input_file}")
+
+    # generate a shell script for the batch submit
+    gitcache = os.path.join(os.environ["USER"], ".cmsgit-cache")
+    cmssw_base = os.path.join(os.environ["CMSSW_BASE"], "src")
     
-    process = process+'/run_PDF_'+pdf+'_M_'+mass+"_muR_"+str(renscfact)+"_muF_"+str(facscfact)
-    if not os.path.exists(process):
-        os.mkdir(process)
+    shell_code = batch_shell_template.format(
+        cmssw_base=cmssw_base, run_dir=run_dir)
 
-    runtime = 86400 #24h
-    runtimeString = ''
-    # 1st step: make the seed files (make_seeds) for the according process in POWHEG-BOX-[version]/[ProcessName]/pwgseeds.dat
-    if not os.path.isfile(os.path.realpath(process)):
-        make_seeds(nbatches, process)
-        print 'Powheg seeds initialized!\n'
-        
-    stages = [11, 12, 13,14,15,16,17,18, 2, 31, 32, 4, "decay"]
-    choices = ["stage 1, xgrid 1", "stage 1, xgrid 2", "stage 1, xgrid 3", "stage 2", "stage 3 init", "stage 3 full", "stage 4", "decay"]
-    choice_stages = dict(zip(choices, stages))
-    print "With which stage do you want to start the generation? Choose:", choice_stages
-    choice = raw_input("Type one of the numbers or \"decay\". The order of a POWHEG run is [" + " ".join([str(x) for x in stages]) + "]: ")
-    if not any(choice == str(x) for x in stages):
-        print "This is not a valid choice. Abort!"
-        exit(0)
-
-    
-    # 2nd step: create the submit scripts (create_scripts): current_dir/GenData/[ProcessName]/jobscript_batch_[BatchNumber]
-    if choice == 'decay':
-        create_scripts(nbatches, process, mass, pdf, decay = True)
+    if stage=="decay":
+        # TODO separately handle the decay part
+        print("decay step still todo")
+        exit()
     else:
-        create_scripts(nbatches, process, mass, pdf)
-    print 'Jobscripts written!\n'
+        shell_code += "echo $SGE_TASK_ID | ./../pwhg_main"
+
+    submit_dir = os.path.join(workdir, "submit")
+    if not os.path.exists(submit_dir):
+        os.mkdir(submit_dir)
+    log_dir = os.path.join(submit_dir, "logs")
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    shell_name = f"run_stage{stage}"
+    if stage==1:
+        shell_name += f"_it{iteration}"
+    shell_path = os.path.join(submit_dir, f"{shell_name}.sh")
+    with open(shell_path, "w") as f:
+        f.write(shell_code)
+    print(f"\nGenerated shell file for job submission at {shell_path}")
     
+    # determine runtime
+    runtimes = {
+        1: (86400, "'tomorrow'"),
+        2: (3*86400, "'nextweek'"),
+        3: (86400, "'tomorrow'"),
+        4: (2*86400, "'testmatch'"),
+        "decay": (3600, "'longlunch'"),
+        }
+    runtime_int, runtime_str = runtimes[stage]
     
-    # 3rd step: change the in the process directory already existing powheg.input file to the accoring parallel stage and start the script
-    # number of POWHEG generation stages: default 5 stages in parallel generation (see change_input.py for more info)
+
+    # write condor submit script
+    submit_path = os.path.join(submit_dir, f"{shell_name}.sub")
+    # setup submit code
+    code = ""
+    if "naf" in os.environ["HOSTNAME"]: # German DESY NAF HTCondor system
+        code += submitTemplateNAF
+        runtime = runtime_int
+    elif "iihe" in os.environ["HOSTNAME"]: # Belgian IIHE T2B HTCondor system
+        code += submitTemplateT2B
+        runtime = runtime_str
+    elif "lxplus" in os.environ["HOSTNAME"]: # CERN lxplus HTCondor system
+        code += submitTemplateLXPLUS
+        runtime = runtime_str
+
+    batch_name = f"{shell_name}__{settings['name']}"
+    code = code.format(
+        arg=os.path.abspath(shell_path),
+        dir=os.path.abspath(log_dir),
+        runtime=runtime,
+        name=settings['name'],
+        batchname=batch_name)
+
+    code += "Queue Environment From (\n"
+    for taskID in range(nbatches):
+        code += f'"SGE_TASK_ID={taskID}"\n'
+    code += ")"
+
+    with open(submit_path, "w") as f:
+        f.write(code)
+    print(f"Generated submit script at {submit_path}")
     
-    for n, stage in enumerate(stages):
-        
-        if choice == '11':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            True
-        elif choice == '12':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if n == 0: continue
-        elif choice == '13':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1]): continue
-        elif choice == '14':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2]): continue
-        elif choice == '15':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3]): continue
-        elif choice == '16':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3,4]): continue
-        elif choice == '17':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3,4,5]): continue
-        elif choice == '18':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3,4,5,6]): continue
-        elif choice == '2':
-            runtime = 3*86400
-            runtimeString = "\'nextweek\'"
-            if any(n == x for x in [0,1,2,3,4,5,6,7]): continue
-        elif choice == '31':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3,4,5,6,7,8]): continue
-        elif choice == '32':
-            runtime = 86400
-            runtimeString = "\'tomorrow\'"
-            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9]): continue
-        elif choice == '4':
-            runtime = 2*86400
-            runtimeString = "\'testmatch\'"
-            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10]): continue
-        elif choice == 'decay':
-            runtime = 3600
-            runtimeString = "\'longlunch\'"
-            stage = "decay"
-            if any(n == x for x in [0,1,2,3,4,5,6,7,8,9,10,11]): continue
-            
-    	print 'Start with generation step parallelstage ' + str(stage) + ':\n'
-        # change the powheg.input file for each process according to the stage
-        change_inputfile(stage, process, mass, pdf, renscfact, facscfact )
-        
-        jobids =[]
-        
+    # submitting
+    print(f"Submitting...")
+    cmd = f"condor_submit -terse {submit_path}"
+    os.system(cmd)
 
-        work_dir = os.getcwd()
-        process = os.path.abspath(process)
-        
-        if n == 0:
-            # check if old pwggridinfo*.dat, pwg-*.top, pwggrid*.dat, pwgfullgrid*.dat, pwgubound*.dat  files from previous generation exists
-            # if they exist, remove them to make sure to preserve a statistically independent generation process
-            print 'Checking for old generation remnants ......\n'
-            
-            #TODO apply right deletions for the according stages
-            os.chdir(process)
-            genfiles = glob('pwggrid*.dat')
-            genfiles += glob('pwg*.top')
-            genfiles += glob('pwgfullgrid*.dat')
-            genfiles += glob('pwgubound*.dat')
-            genfiles = [os.path.abspath(x) for x in genfiles]
-            for genfile in genfiles:
-                os.remove(genfile)
-            print 'Generation remnants removed. Can start clean generation.\n'
-        
-        # define which scripts should be submitted
-        process_name = os.path.basename(process)
-
-        target_dir = os.path.join(work_dir, 'GenData', process_name)
-        os.chdir(target_dir)
-        scripts = glob("*.sh")
-
-        if stage == stages[-3]:                     # special treatment for the first parallelstage=3: produce *fullgrid* files on a single core
-            scripts = [os.path.abspath(sorted(scripts)[0])]
-        else:
-            scripts = [os.path.abspath(x) for x in scripts]
-        
-
-        # directory for the array scripts
-        foldername = "SubmitArrays"
-        if not os.path.exists(foldername):
-            os.mkdir(foldername)
-        os.chdir(foldername)
-        
-        # set the job properties
-        print 'Setting job porperties ... \n'
-        bc = batchConfig_base()
-        bc.batch_name = os.path.basename(process)
-        #bc.diskspace = 4000000
-        #bc.runtime = int(runtime) #n times 24h 
-        bc.jobFlavor = runtimeString
-        
-        # submit the batches in the current stage as an arrayjob to the cluster
-        print 'Submitting jobs ... \n'
-        arrayscriptpath = "stage_" + str(stage) + ".sh"
-        jobids += bc.submitArrayToBatch(scripts = scripts, arrayscriptpath = arrayscriptpath)
-        print 'Jobs submitted!\n'
-        
-        os.chdir(work_dir)
-            
-        # # wait till the jobs are finished, before the next stage is started
-        # print 'Waiting for jobs to finish ... \n'
-        # bc.do_qstat(jobids)
-        # print 'Parallelstage ' + str(stage) + ' finished. \n'
-        
-        # # in case there are problems with waiting
-        # print 'Start the next parallelstage by hand. Abort!'
-        # message = "Parallelstage "+str(stage)+ ' finished'
-        # subprocess.Popen(['notify-send', message])
-        exit(0)
-        
-    # # last step: if all generation steps are finished, move the generated events .lhe and the pwgseeds.dat into the Gendata directory
-    # print 'All generation steps finished. Finalizing ...\n'
-    # if finalization:
-    #     finalize(process)
-
-
-
-def finalize(process):
-
-
-    process = os.path.abspath(process)
-    process_name = os.path.basename(process)
-    work_dir = os.path.abspath(os.getcwd())
-    target_dir = os.path.join(work_dir, "GenData", process_name)
-
-    # get all the event .lhe files in process directory
-    os.chdir(process)
-    data_origin = glob('pwgevents-????.lhe')
-    data_origin = [os.path.abspath(x) for x in data_origin]
-
-    # check for the highest .lhe-file's batch number in target directory
-    os.chdir(target_dir)
-    data_target = glob('*.lhe')
-    highest = 0
-    for datafile in data_target:
-    	dataname = os.path.basename(datafile)
-    	numbers = re.search(r'\d+', dataname).group()
-    	if int(numbers) > highest: highest = int(numbers)
-
-    # put the datafiles into the GenData directory, rename the datafiles, if the batch number already exists
-    for datafile in data_origin:
-        dataname = os.path.basename(datafile)
-        numbers = re.search(r'\d+', dataname).group()                
-        dataname = dataname.replace(numbers, str(int(numbers)+ highest))                
-        os.rename(datafile, os.path.join(target_dir, dataname))
-
-    # also move the pwgseeds.dat file to the target directory and rename it according to the highest batch number
-    seedfile = os.path.abspath(os.path.join(process, 'pwgseeds.dat'))
-    os.rename(seedfile, os.path.join(target_dir, 'pwgseeds_batchnum>'+str(highest)+'.dat'))
-        
-    os.chdir(work_dir)
-    
-    print 'Finished! You can find all generated data and the seeds used for the generation within the GenData directory.'
-
-
-
-def main(args = sys.argv[1:]):
-    if not(args[0].isdigit()):
-        print 'Wrong usage! First argument has to be an integer, representing the number of batches, further arguments should be directories to a POWHEG process\nAbort!'
-        exit(0)
-        
-    nbatches = int(args[0])
-    process = args[1]
-    mass    = args[2]
-    pdf     = args[3]
-    renscfact   = float(args[4])
-    facscfact   = float(args[5])
-    
-    submit_handler (nbatches = nbatches, process = process, mass = mass, pdf = pdf, renscfact = renscfact, facscfact = facscfact, finalization = False)
-
-
-
-if __name__ == '__main__':
-    main()
