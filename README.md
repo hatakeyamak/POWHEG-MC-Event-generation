@@ -1,5 +1,61 @@
 # Instructions for the ttb-jets MC event production with POWHEG-BOX-RES
 
+## Setup
+
+All commands are given relative to a `$base` (set it e.g. via `base=$PWD` in your desired installation directory)
+
+Set up a CMSSW_10_2_14 environment:
+```
+cd $base
+scram project CMSSW_10_2_14
+cd $base/CMSSW_10_2_14/src
+cmsenv
+cd $base
+```
+
+Install POWHEG-BOX-RES:
+```
+cd $base
+svn checkout --revision 3604 --username anonymous --password anonymous svn://powhegbox.mib.infn.it/trunk/POWHEG-BOX-RES
+```
+We are using revision 3604, which is the stable release version. More recent revisions have not been tested yet.
+
+Get the code for the ttbb process:
+```
+cd $base
+cd POWHEG-BOX-RES
+git clone ssh://git@gitlab.cern.ch:7999/tjezo/powheg-box-res_ttbb.git ttbb
+```
+Enter the ttbb directory and check out the appropriate commit that fits to r3604 of the POWHEG-BOX-RES code:
+```
+cd ttbb
+git checkout 128aefb6061b72714d34e5f1d4798967f76f9585
+```
+Then compile the fortran code of POWHEG:
+```
+cd $base/POWHEG-BOX-RES/ttbb
+make pwhg_main
+make lhef_decay
+```
+
+The ttbb POWHEG code is now in principle ready to run. We can now also install this repository to ease the event generation and submit to HTCondor:
+```
+cd $base
+git clone git@github.com:JanvanderLinden/POWHEG-MC-Event-generation.git
+```
+
+For a new production it is recommended to create a new directory now in which you can store everything needed for that production, e.g.
+```
+cd $base
+mkdir production_test
+cd production_test
+production=$PWD
+```
+
+In `$base/POWHEG-MC-Event-generation/ttbb_powheg_inputs/` a few `powheg.input` files are stored which can be used for event production. The settings of course can be adjusted based on what configuration is supposed to be generated.
+
+...
+
 ### Prepare the python scripts for the automated event generation
 Clone [this git repository](https://gitlab.cern.ch/kit-cn-cms/powheg-event-generation) and checkout into the tree `production`.
 Next set the environment by adding these lines
@@ -18,22 +74,6 @@ echo "setup POWHEG"
 to your setup command file and source it. Next source CMSSW, to ensure a FORTRAN comppiler newer than version 5 is loaded.
 
 
-### Installation of POWHEG-BOX-RES and ttbb
-Checkout
-```console
-svn checkout --revision 3604 --username anonymous --password anonymous svn://powhegbox.mib.infn.it/trunk/POWHEG-BOX-RES
-```
-.
-This will create a directory `POWHEG-BOX-RES`. Enter it and clone the `ttbb`-process.
-```console
-cd POWHEG-BOX-RES
-git clone ssh://git@gitlab.cern.ch:7999/tjezo/powheg-box-res_ttbb.git ttbb
-```
-Enter the `ttbb`-directory and compile the Fortran code.
-```console
-cd ttbb
-make
-```
 
 ### Prepare the run
 Copy the input config `powheg.input-save` and the reweighting file `pwg-rwl.dat` into your process directory.
