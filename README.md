@@ -12,6 +12,10 @@ cd $base/CMSSW_10_2_14/src
 cmsenv
 cd $base
 ```
+Install `yaml` package for python3:
+```
+pip3 install --user pyyaml
+```
 
 Install POWHEG-BOX-RES:
 ```
