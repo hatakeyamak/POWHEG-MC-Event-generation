@@ -37,7 +37,7 @@ if opts.init:
             f"Process directory\n  {opts.process}\nin POWHEG-BOX-RES does not exist")
 
     # determine workdir
-    dir_name = f"pdf_{str(opts.pdf)}__mass_{str(opts.mass)}__muR_{str(opts.muR)}__muF_{str(opts.muF)}"
+    dir_name = f"r{opts.muR}_f{opts.muF}_m{opts.mass}_p{opts.pdf}"
     if opts.tag:
         dir_name = f"{opts.tag}__{dir_name}"
 

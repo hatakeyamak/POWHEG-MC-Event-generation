@@ -24,43 +24,21 @@ echo 'POWHEG initialized'
 
 # running powheg
 cd {run_dir}
-echo "Running batch job number $SGE_TASK_ID"
+echo "Running batch job number $1"
 """
 
-submitTemplateT2B = """
+submitTemplate = """
 universe = vanilla
-executable = /bin/bash
-arguments = {arg}
-error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
-log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
-output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
+executable = {arg}
+arguments = $(ProcId)
+error  = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).err
+log    = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).log
+output = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).out
 run_as_owner = true
 +JobFlavour = {runtime}
 JobBatchName = {batchname}
-"""
 
-submitTemplateNAF = """
-universe = vanilla
-executable = /bin/bash
-arguments = {arg}
-error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
-log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
-output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
-run_as_owner = true
-+RequestRuntime = {runtime}
-JobBatchName = {batchname}
-"""
-
-submitTemplateLXPLUS = """
-universe = vanilla
-executable = /bin/bash
-arguments = {arg}
-error  = {dir}/{name}submitScript.$(Cluster)_$(ProcId).err
-log    = {dir}/{name}submitScript.$(Cluster)_$(ProcId).log
-output = {dir}/{name}submitScript.$(Cluster)_$(ProcId).out
-run_as_owner = true
-+JobFlavour = {runtime}
-JobBatchName = {batchname}
+queue {n}
 """
 
 def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=False):
@@ -92,7 +70,11 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
         print("decay step still todo")
         exit()
     else:
-        shell_code += "echo $SGE_TASK_ID | ./../pwhg_main"
+        shell_code += "echo $1 | ./../pwhg_main"
+
+    shell_name = f"stage{stage}"
+    if stage==1:
+        shell_name += f"_it{iteration}"
 
     submit_dir = os.path.join(workdir, "submit")
     if not os.path.exists(submit_dir):
@@ -100,13 +82,13 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     log_dir = os.path.join(submit_dir, "logs")
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
+    if not os.path.exists(os.path.join(log_dir, shell_name)):
+        os.mkdir(os.path.join(log_dir, shell_name))
 
-    shell_name = f"run_stage{stage}"
-    if stage==1:
-        shell_name += f"_it{iteration}"
     shell_path = os.path.join(submit_dir, f"{shell_name}.sh")
     with open(shell_path, "w") as f:
         f.write(shell_code)
+    os.system(f"chmod u+x {shell_path}")
     print(f"\nGenerated shell file for job submission at {shell_path}")
     
     # determine runtime
@@ -123,29 +105,14 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     # write condor submit script
     submit_path = os.path.join(submit_dir, f"{shell_name}.sub")
     # setup submit code
-    code = ""
-    if "naf" in os.environ["HOSTNAME"]: # German DESY NAF HTCondor system
-        code += submitTemplateNAF
-        runtime = runtime_int
-    elif "iihe" in os.environ["HOSTNAME"]: # Belgian IIHE T2B HTCondor system
-        code += submitTemplateT2B
-        runtime = runtime_str
-    elif "lxplus" in os.environ["HOSTNAME"]: # CERN lxplus HTCondor system
-        code += submitTemplateLXPLUS
-        runtime = runtime_str
-
-    batch_name = f"{shell_name}__{settings['name']}"
-    code = code.format(
+    batch_name = f"pwhg__{shell_name}__{settings['name']}"
+    code = submitTemplate.format(
         arg=os.path.abspath(shell_path),
         dir=os.path.abspath(log_dir),
-        runtime=runtime,
-        name=settings['name'],
-        batchname=batch_name)
-
-    code += "Queue Environment From (\n"
-    for taskID in range(nbatches):
-        code += f'"SGE_TASK_ID={taskID}"\n'
-    code += ")"
+        runtime=runtime_str,
+        shell_name=shell_name,
+        batchname=batch_name,
+        n=nbatches)
 
     with open(submit_path, "w") as f:
         f.write(code)
@@ -153,6 +120,6 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     
     # submitting
     print(f"Submitting...")
-    cmd = f"condor_submit -terse {submit_path}"
+    cmd = f"condor_submit {submit_path}"
     os.system(cmd)
 
