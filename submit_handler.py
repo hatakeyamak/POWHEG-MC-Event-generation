@@ -52,9 +52,8 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     # add stage to input file
     cmd = f'echo "parallelstage {stage}" >> {input_file}'
     os.system(cmd)
-    if int(stage) == 1:
-        cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
-        os.system(cmd)
+    cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
+    os.system(cmd)
     print("The following configuration is now in the powheg.input file:\n")
     os.system(f"tail -n 8 {input_file}")
 

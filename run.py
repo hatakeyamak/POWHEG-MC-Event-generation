@@ -21,8 +21,8 @@ parser.add_option("-w", dest="workdir", default=None, help="path to workdir that
 parser.add_option("-S", dest="stage", default=1, help="parallel stage to run")
 parser.add_option("-X", dest="iteration", default=1, help="iteration to run (relevant for stage 1)")
 parser.add_option("-n", dest="nbatches", default=1000, help="number of batches")
-parser.add_option("--force", dest="force", default=False, action="store_true", help="force re-execution ")
-parser.add_option("--validate", dest="validate", default=False, action="store_true", help="Validate the specified stage/iteration")
+parser.add_option("--force","-f", dest="force", default=False, action="store_true", help="force re-execution ")
+parser.add_option("--validate","-v", dest="validate", default=False, action="store_true", help="Validate the specified stage/iteration")
 (opts, args) = parser.parse_args()
 
 # Initialize in first call
@@ -73,14 +73,10 @@ if opts.init:
         "run_dir": run_dir,
         "name": dir_name,
         "stage1": False,
-        "stage1_valid": False,
         "stage1_it": 0,
         "stage2": False,
-        "stage2_valid": False,
         "stage3": False,
-        "stage3_valid": False,
         "stage4": False,
-        "stage4_valid": False,
         }
     yaml_file = os.path.join(dir_path, "settings.yml")
     with open(yaml_file, "w") as yf:
@@ -152,14 +148,66 @@ if int(opts.stage) in [1,2,3,4]:
         exit()
     if int(opts.stage) == 1:
         it_status = settings[f"stage1_it"]
-        if it_status != int(opts.iteration)-1 and not opts.force:
-            print(f"\nThe last validated iteration is X={it_status} and you requested X={opts.iteration} (should be X={it_status+1}). Make sure this is what you want to do, or adjust the requested iteration. You can force the iteration you requested by re-executing this command and adding the flag '--force'.")
+        if it_status < int(opts.iteration)-1 and not opts.force:
+            val = "NONE" if it_status == 0 else f"X={it_status}"
+            print(f"\nThe last validated iteration is {val} and you requested X={opts.iteration}. Make sure this is what you want to do, or adjust the requested iteration. You can force the iteration you requested by re-executing this command and adding the flag '--force' or validate the previous iteration via '--validate'.")
             exit()
     else:
-        last_stage_valid = settings[f"stage{int(opts.stage)-1}_valid"]
+        last_stage_valid = settings[f"stage{int(opts.stage)-1}"]
         if (not last_stage_valid) and not opts.force:
             print(f"\nYou requested to run stage S={opts.stage}, but the last stage has not yet been validated. You can validate the previous stage by appending '--validate' to the submit command of the previous stage to register its succesful completion. You can also force the execution of your current stage by re-executing the command and adding the flag '--force'.")
             exit()
+
+from validate import check_stage_output
+if opts.validate:
+    print(f"Validating output of stage={opts.stage}, iteration={opts.iteration}...")
+    # validate stage
+    all_exist, missing_ids = check_stage_output(
+        settings=settings,
+        nbatches=int(opts.nbatches),
+        stage=int(opts.stage),
+        iteration=int(opts.iteration),
+        workdir=opts.workdir,
+        )
+    if not all_exist:
+        print(f"Not all files were found in output directory\n\t{settings['run_dir']}")
+        print(f"List of jobids with missing files: {missing_ids}")
+        print(f"Validation unsuccessful, exiting.")
+        exit()
+    else:
+        print(f"Validation successful, changing status in workdir...")
+        if int(opts.stage)==1:
+            settings[f"stage1_it"] = int(opts.iteration)
+        else:
+            settings[f"stage{opts.stage}"] = True
+
+        with open(settings_path, "w") as yf:
+            yaml.dump(settings, yf, default_flow_style=False, indent=4)
+        print(f"You can now proceeed with the next stage.")
+        exit()
+    
+else:
+    # check if the output of the requested stage is already available
+    any_exist, _ = check_stage_output(
+        settings=settings,
+        nbatches=int(opts.nbatches),
+        stage=int(opts.stage),
+        iteration=int(opts.iteration),
+        workdir=opts.workdir,
+        any_exist=True
+        )
+    if any_exist:
+        print(f"\nFound output files of stage={opts.stage}, it={opts.iteration} in output directory\n\t{settings['run_dir']}")
+        query = input(f"Stop execution (stop/quit/s/q/n) or delete old files (delete/del/d/y)? ")
+        if query[0].lower() in ["d","y"]:
+            print("Deleting old files...")
+            # TODO
+            print("not yet implemented ..")
+            exit()
+        else:
+            print("Exiting.") 
+        exit()
+
 
 
 ## TODO validation
