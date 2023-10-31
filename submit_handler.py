@@ -50,12 +50,15 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     cmd = f"cp {settings['powheg.input']} {input_file}"
     os.system(cmd)
     # add stage to input file
-    cmd = f'echo "parallelstage {stage}" >> {input_file}'
-    os.system(cmd)
-    cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
-    os.system(cmd)
     print("The following configuration is now in the powheg.input file:\n")
-    os.system(f"tail -n 8 {input_file}")
+    if int(stage) < 5: # different for decay stage
+        cmd = f'echo "parallelstage {stage}" >> {input_file}'
+        os.system(cmd)
+        cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
+        os.system(cmd)
+        os.system(f"tail -n 8 {input_file}")
+    else:
+        os.system(f"tail -n 6 {input_file}")
 
     # generate a shell script for the batch submit
     gitcache = os.path.join(os.environ["USER"], ".cmsgit-cache")
@@ -64,10 +67,12 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     shell_code = batch_shell_template.format(
         cmssw_base=cmssw_base, run_dir=run_dir)
 
-    if stage=="decay":
-        # TODO separately handle the decay part
-        print("decay step still todo")
-        exit()
+    if int(stage)==5:
+        # decay stage is different
+        shell_code += 'jobid=$(printf "%04d" $1) \n'
+        shell_code += 'echo pwgevents-${jobid}.lhe | ./../lhef_decay \n'
+        shell_code += 'echo "Done with lhef_decay routine, starting to zip lhe files" \n'
+        shell_code += 'echo "</LesHouchesEvents>" | gzip - | cat - >> pwgevents-${jobid}-decayed.lhe \n'
     else:
         shell_code += "echo $1 | ./../pwhg_main"
 
@@ -96,7 +101,7 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
         2: (3*86400, "'nextweek'"),
         3: (86400, "'tomorrow'"),
         4: (2*86400, "'testmatch'"),
-        "decay": (3600, "'longlunch'"),
+        5: (3600, "'longlunch'"),
         }
     runtime_int, runtime_str = runtimes[stage]
     

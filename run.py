@@ -77,6 +77,7 @@ if opts.init:
         "stage2": False,
         "stage3": False,
         "stage4": False,
+        "stage5": False
         }
     yaml_file = os.path.join(dir_path, "settings.yml")
     with open(yaml_file, "w") as yf:
@@ -141,7 +142,10 @@ if not os.path.exists(run_dir):
         f"Run directory\n  {run_dir}\ndoes not exist")
 
 # check if the requested stage has already been run
-if int(opts.stage) in [1,2,3,4]:
+if opts.stage == "decay": 
+    opts.stage = "5"
+    print(f"You chose stage 'decay' which will be referred to as stage '5' internally.")
+if int(opts.stage) in [1,2,3,4,5]:
     stage_status = settings[f"stage{opts.stage}"]
     if stage_status and not opts.force:
         print(f"\nParallelstage {opts.stage} has already been run for this setup. If you want to force a re-run, please re-execute this command and add the flag '--force'.")
@@ -154,7 +158,7 @@ if int(opts.stage) in [1,2,3,4]:
             exit()
     else:
         last_stage_valid = settings[f"stage{int(opts.stage)-1}"]
-        if (not last_stage_valid) and not opts.force:
+        if (not last_stage_valid) and not (opts.force or opts.validate):
             print(f"\nYou requested to run stage S={opts.stage}, but the last stage has not yet been validated. You can validate the previous stage by appending '--validate' to the submit command of the previous stage to register its succesful completion. You can also force the execution of your current stage by re-executing the command and adding the flag '--force'.")
             exit()
 

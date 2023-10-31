@@ -20,7 +20,15 @@ def get_expected_files(stage, iteration=1):
             f"pwg-xg{iteration}-xgrid-rm-{{jobid:04d}}.top"
             ]
     elif stage==4:
-        expected_files = [] # TODO
+        expected_files = [
+            "pwgevents-{jobid:04d}.lhe",
+            "pwg-{jobid:04d}-st4-stat.dat",
+            "pwgcounters-st4-{jobid:04d}.dat",
+            "pwgboundviolations-{jobid:04d}.dat",
+            ]
+    elif stage==5:
+        expected_files = []
+        # TODO
     return expected_files
     
 def check_stage_output(settings, nbatches, stage, iteration, workdir, any_exist=False):
@@ -35,6 +43,7 @@ def check_stage_output(settings, nbatches, stage, iteration, workdir, any_exist=
                 # any_exist --> return true as soon as one file exists
                 return True, []
             if not os.path.exists(f_dir) and not any_exist:
+                #print(f_formatted)
                 # all_exist --> return list of missing files
                 missing_ids.append(n)
                 break
