@@ -19,6 +19,10 @@ def get_expected_files(stage, iteration=1):
             f"pwg-xg{iteration}-xgrid-btl-{{jobid:04d}}.top",
             f"pwg-xg{iteration}-xgrid-rm-{{jobid:04d}}.top"
             ]
+    elif stage==2: 
+        expected_files = []
+    elif stage==3:
+        expected_files = []
     elif stage==4:
         expected_files = [
             "pwgevents-{jobid:04d}.lhe",
