@@ -22,6 +22,7 @@ def lhe_postprocess(settings, out_dir):
     # loop over lhe files
     n_tot = 0
     for f in list(sorted(lhe_files)):
+        '''
         f_name = os.path.basename(f)
         print(f"Moving and unzipping file {f_name}...")
         new_f = f"{out_dir}/{f_name}"
@@ -39,7 +40,6 @@ def lhe_postprocess(settings, out_dir):
         # unzip file
         cmd = f"gzip -d {new_f}"
         os.system(cmd)
-        '''
 
         # get nevents per file
         cmd = f'grep /event {f} | wc -l > .n'
