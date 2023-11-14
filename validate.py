@@ -20,9 +20,29 @@ def get_expected_files(stage, iteration=1):
             f"pwg-xg{iteration}-xgrid-rm-{{jobid:04d}}.top"
             ]
     elif stage==2: 
-        expected_files = []
+        expected_files = [
+            "pwg-st2-xgrid-btl-{jobid:04d}.top",
+            "pwg-st2-xgrid-rm-{jobid:04d}.top",
+            "pwggrid-btl-{jobid:04d}.dat",
+            "pwggrid-rm-{jobid:04d}.dat",
+            "pwgbtlupb-{jobid:04d}.dat",
+            "pwgrmupb-{jobid:04d}.dat",
+            "pwgcounters-st2-{jobid:04d}.dat",
+            "pwg-{jobid:04d}-st2-stat.dat"
+            ]
     elif stage==3:
-        expected_files = []
+        expected_files = [
+            "mint_upb_btlupb_rat.top",
+            "mint_upb_btlupb.top",
+            "mint_upb_rmupb.top",
+            "pwgfullgrid-btl-{jobid:04d}.dat",
+            "pwgfullgrid-rm-{jobid:04d}.dat",
+            "pwgubound-{jobid:04d}.dat",
+            "pwgcounters-st3-{jobid:04d}.dat",
+            "pwg-{jobid:04d}-st3-stat.dat",
+            "pwghistnorms.top",
+            "pwgborngrid-stat.dat"
+        ]
     elif stage==4:
         expected_files = [
             "pwgevents-{jobid:04d}.lhe",

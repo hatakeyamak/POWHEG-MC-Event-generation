@@ -23,7 +23,16 @@ parser.add_option("-X", dest="iteration", default=1, help="iteration to run (rel
 parser.add_option("-n", dest="nbatches", default=1000, help="number of batches")
 parser.add_option("--force","-f", dest="force", default=False, action="store_true", help="force re-execution ")
 parser.add_option("--validate","-v", dest="validate", default=False, action="store_true", help="Validate the specified stage/iteration")
+parser.add_option("--process-lhe","--lhe",dest="process_lhe", default=False, action="store_true", help="process the output of the LHE step (4)")
 (opts, args) = parser.parse_args()
+
+if opts.process_lhe: 
+    # set stage 4 and validate flags for LHE processing
+    opts.stage = 4
+    opts.validate = True
+#if int(opts.stage) == 3:
+#    print("Stage 3 only requires one job, so setting n=1")
+#    opts.nbatches = 1
 
 # Initialize in first call
 if opts.init:
@@ -176,19 +185,21 @@ if opts.validate:
     if not all_exist:
         print(f"Not all files were found in output directory\n\t{settings['run_dir']}")
         print(f"List of jobids with missing files: {missing_ids}")
-        print(f"Validation unsuccessful, exiting.")
-        exit()
+        if not opts.force:
+            print(f"Validation unsuccessful, exiting.")
+            exit()
     else:
         print(f"Validation successful, changing status in workdir...")
-        if int(opts.stage)==1:
-            settings[f"stage1_it"] = int(opts.iteration)
-        else:
-            settings[f"stage{opts.stage}"] = True
+        if not opts.process_lhe:
+            if int(opts.stage)==1:
+                settings[f"stage1_it"] = int(opts.iteration)
+            else:
+                settings[f"stage{opts.stage}"] = True
 
-        with open(settings_path, "w") as yf:
-            yaml.dump(settings, yf, default_flow_style=False, indent=4)
-        print(f"You can now proceeed with the next stage.")
-        exit()
+            with open(settings_path, "w") as yf:
+                yaml.dump(settings, yf, default_flow_style=False, indent=4)
+            print(f"You can now proceeed with the next stage.")
+            exit()
     
 else:
     # check if the output of the requested stage is already available
@@ -212,7 +223,22 @@ else:
             print("Exiting.") 
         exit()
 
-
+if opts.process_lhe:
+    from lhe_postprocess import lhe_postprocess
+    # make new lhe directory in working area
+    lhe_dir = os.path.join(opts.workdir, "lhe")
+    if not os.path.exists(lhe_dir):
+        os.mkdir(lhe_dir)
+    v = 1
+    while os.path.exists(os.path.join(lhe_dir, f"v{v}")):
+        v += 1
+    out_dir = os.path.abspath(os.path.join(lhe_dir, f"v{v}"))
+    os.mkdir(out_dir)
+    lhe_postprocess(
+        settings=settings,
+        out_dir=out_dir
+        )
+    exit()
 
 ## TODO validation
 ## TODO validate that the number of batches matches the previous iteration

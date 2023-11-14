@@ -167,5 +167,8 @@ int main(int argc, char** argv)
   
   
   std::cout << "Added " << eventIt << " events from " << argc-2 << " files to file " << initialFileName << std::endl;
+  //std::ofstream cntFile("nevents.dat", std::ios::out);
+  //cntFile << eventIt << std::endl;
+  
   return 0;
 }
