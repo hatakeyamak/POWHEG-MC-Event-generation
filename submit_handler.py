@@ -5,6 +5,7 @@ from make_seeds import make_seeds
 
 batch_shell_template = """
 #!/bin/bash
+echo "Running batch job number $1"
 export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
 source $VO_CMS_SW_DIR/cmsset_default.sh
 alias cd='cd -P'
@@ -24,7 +25,6 @@ echo 'POWHEG initialized'
 
 # running powheg
 cd {run_dir}
-echo "Running batch job number $1"
 """
 
 submitTemplate = """
@@ -37,6 +37,7 @@ output = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).out
 run_as_owner = true
 +JobFlavour = {runtime}
 JobBatchName = {batchname}
+request_cpus = 4
 
 queue {n}
 """
@@ -102,11 +103,11 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     
     # determine runtime
     runtimes = {
-        1: (86400, "'tomorrow'"),
-        2: (3*86400, "'nextweek'"),
-        3: (86400, "'tomorrow'"),
-        4: (2*86400, "'testmatch'"),
-        5: (3600, "'longlunch'"),
+        1: (86400, '"tomorrow"'),
+        2: (3*86400, '"nextweek"'),
+        3: (86400, '"tomorrow"'),
+        4: (2*86400, '"testmatch"'),
+        5: (3600, '"longlunch"'),
         }
     runtime_int, runtime_str = runtimes[stage]
     
