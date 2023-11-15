@@ -42,7 +42,7 @@ request_cpus = 4
 queue {n}
 """
 
-def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=False):
+def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workdir, finalization=False):
     run_dir = settings["run_dir"]
     seed_file = make_seeds(nbatches, run_dir)
 
@@ -56,18 +56,39 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     cmd = f"cp {settings['powheg.input']} {input_file}"
     os.system(cmd)
     # add stage to input file
-    print("The following configuration is now in the powheg.input file:\n")
-    if int(stage) < 5: # different for decay stage
+    n_lines = 6
+    if int(stage) < 5: 
         cmd = f'echo "parallelstage {stage}" >> {input_file}'
         os.system(cmd)
         cmd = f'echo "xgriditeration {iteration}" >> {input_file}'
         os.system(cmd)
-        os.system(f"tail -n 8 {input_file}")
-    else:
-        os.system(f"tail -n 6 {input_file}")
+        n_lines += 2
+
+    # add ttbar decay information and nevents per job to powheg config
+    if int(stage) == 4:
+        cmd = f'echo "numevts {nevt}" >> {input_file}'
+        os.system(cmd)
+        # ttdecay
+        if ttbardecay == "0L":
+            decay_id = 00022
+        elif ttbardecay == "1L":
+            decay_id = 11111
+        elif ttbardecay == "2L":
+            decay_id = 22200
+        else: #incl
+            decay_id = 22222
+        cmd = f'echo "topdecaymode {decay_id}" >> {input_file}'
+        os.system(cmd)
+        n_lines += 2
+        if ttbardecay == "1L":
+            cmd = f'echo "semileptonic 1" >> {input_file}'
+            os.system(cmd)
+            n_lines += 1
+    
+    print("The following configuration is now in the powheg.input file:\n")
+    os.system(f"tail -n {n_lines} {input_file}")
 
     # generate a shell script for the batch submit
-    gitcache = os.path.join(os.environ["USER"], ".cmsgit-cache")
     cmssw_base = os.path.join(os.environ["CMSSW_BASE"], "src")
     
     shell_code = batch_shell_template.format(

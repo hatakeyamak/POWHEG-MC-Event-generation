@@ -17,22 +17,33 @@ init_opts.add_option("--mur", dest="muR", default=1.0, help="muR factor (only fo
 init_opts.add_option("--muf", dest="muF", default=1.0, help="muF factor (only for --init)")
 parser.add_option_group(init_opts)
 
+lhe_opts = optparse.OptionGroup(parser, "LHE Options")
+lhe_opts.add_option("-N", dest="nevents", default=1000, help="number of events per job")
+lhe_opts.add_option("-d","--decay",dest="ttbar_decay_channel", default=None, help="speficy ttbar decay channel [0L/1L/2L/incl]")
+lhe_opts.add_option("--process-lhe","--lhe",dest="process_lhe", default=False, action="store_true", help="process the output of the LHE step (4) after its completion")
+parser.add_option_group(lhe_opts)
+
 parser.add_option("-w", dest="workdir", default=None, help="path to workdir that is created after initialization (not needed for --init)")
 parser.add_option("-S", dest="stage", default=1, help="parallel stage to run")
 parser.add_option("-X", dest="iteration", default=1, help="iteration to run (relevant for stage 1)")
 parser.add_option("-n", dest="nbatches", default=1000, help="number of batches")
 parser.add_option("--force","-f", dest="force", default=False, action="store_true", help="force re-execution ")
 parser.add_option("--validate","-v", dest="validate", default=False, action="store_true", help="Validate the specified stage/iteration")
-parser.add_option("--process-lhe","--lhe",dest="process_lhe", default=False, action="store_true", help="process the output of the LHE step (4)")
 (opts, args) = parser.parse_args()
 
 if opts.process_lhe: 
     # set stage 4 and validate flags for LHE processing
     opts.stage = 4
     opts.validate = True
-#if int(opts.stage) == 3:
-#    print("Stage 3 only requires one job, so setting n=1")
-#    opts.nbatches = 1
+elif int(opts.stage) == 4:
+    # make sure a ttbar decay channel is specified
+    if opts.ttbar_decay_channel is None:
+        raise ValueError(
+            f"Need to specify a ttbar decay channel for LHE production [0L/1L/2L/incl]")
+    elif not opts.ttbar_decay_channel in ["OL", "1L", "2L", "incl"]:
+        raise ValueError(
+            f"Invalid choice for ttbar decay channel ({opts.ttbar_decay_channel}). The options are [0L/1L/2L/incl]")
+
 
 # Initialize in first call
 if opts.init:
@@ -102,7 +113,6 @@ if opts.init:
     with open(yaml_file, "w") as yf:
         yaml.dump(settings, yf, default_flow_style=False, indent=4)
     print(f"\nSaved settings in yaml file: {yaml_file}")
-    print(settings)
     
     # adding the settings to the powheg input file
     cmd = f'echo "topmass {opts.mass}" >> {powheg_input_path}'
@@ -121,20 +131,6 @@ if opts.init:
     print(f"\nIntialization is done, you can now start with the first processing stage. For this, run the submit command with the following arguments:")
     print(f"\n-w ./{dir_name} -S 1 -X 1 -n NBATCHES\n")
     print(f"This command submits NBATCHES condor jobs for parallelstage=1 and xgriditeration=1")
-    print(f"The number of events produced per batch job is specified in your powheg.input file")
-    with open(powheg_input_path, "r") as f:
-        lines = f.readlines()
-    nevts = None
-    for l in lines:
-        if l.startswith("numevts"):
-            try:
-                nevts = int(l.split(" ")[1])
-            except: continue
-            break
-    if nevts:
-        print(f"In your file 'numevts' is set to {nevts}")
-    else:
-        print("In your powheg.input file no information about the number of events per job could be found. Check that the file has a setting 'numevts'")
     exit()
 
 # run the actual submit after successful initialization

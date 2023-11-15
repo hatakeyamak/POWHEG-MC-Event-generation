@@ -101,19 +101,24 @@ If validation was successful the next stage can be run.
 Parallel stages 1-3 are for preparation of integration grids, so if the inputs for producing LHE files are already available only stage 4 has to be run.
 For this purpose, first initialize a working directory with the appropriate generator settings (mur,muf,pdf,mass), and pick the appropriate `powheg.input` and `pwg-rwl` files. For simplicity you can also copy the already existing file
 ```
-cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/powheg.input-save $production/test__r1.0_f1.0_m172.5_p320900/powheg.input
-cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/pwg-rwl.dat $production/test__r1.0_f1.0_m172.5_p320900/pwg-rwl.dat
+cp /afs/cern.ch/work/v/vanderli/public/ttbb-lhe-inputs/configs_nominal/powheg.input_muR1.0_muF1.0 $production/test__r1.0_f1.0_m172.5_p320900/powheg.input
+cp /afs/cern.ch/work/v/vanderli/public/ttbb-lhe-inputs/configs_nominal/pwg-rwl.dat_320900 $production/test__r1.0_f1.0_m172.5_p320900/pwg-rwl.dat
 ```
 Then, proceed to copy the grid files for the LHE run to the run directory in `POWHEG-BOX-RES/ttbb/` (e.g. with the initialization from the example above this would be `$base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900`.
 ```
-cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/*fullgrid* $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900
-cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/*pwgubound* $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900
+cp /afs/cern.ch/work/v/vanderli/public/ttbb-lhe-inputs/grids_nominal/muR1.0_muF1.0/* $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900/
 ```
 Jobs for LHE production can then be submitted via
 ```
-python3 ../POWHEG-MC-Event-generation/run.py -w [PATH_TO_WORKDIR] -S 4 -n [NBATCHES] --force
+python3 ../POWHEG-MC-Event-generation/run.py -w [PATH_TO_WORKDIR] -S 4 -n [NBATCHES] -N [NEVTSPERJOB] --decay [DECAYCHANNEL] --force 
 ```
 You have to append the option `--force` to force the submission of batch jobs as otherwise this is blocked as parallel stages 1-3 were skipped.
+Two additional options are required for this step, `-N` and `--decay`. The first specifies the number of events per job (defaults to 1000), and the second specifies the ttbar decay channel.
+This option is mandatory and has to be specified. The options are:
+- `1L`: for semileptonic ttbar decays
+- `0L`: for fully hadronic ttbar decays
+- `2L`: for dileptonic ttbar decays
+- `incl`: for inclusive ttbar decays
 
 # POWHEG parallel stages
 If **POWHEG** is run in parallel mode, there are 4 parallel stages in the generation process, where each has to be finished, before the next stage is started.
