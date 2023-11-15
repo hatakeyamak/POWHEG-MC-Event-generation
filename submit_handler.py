@@ -45,6 +45,11 @@ def submit_handler(settings, nbatches, stage, iteration, workdir, finalization=F
     run_dir = settings["run_dir"]
     seed_file = make_seeds(nbatches, run_dir)
 
+    if stage==4:
+        # copy rwl file
+        cmd = f"cp {settings['pwg-rwl']} {settings['run_dir']}"
+        os.system(cmd)
+
     # copy powheg.input file and adjust for the current stage
     input_file = os.path.join(settings['run_dir'], 'powheg.input')
     cmd = f"cp {settings['powheg.input']} {input_file}"

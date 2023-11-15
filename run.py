@@ -67,9 +67,18 @@ if opts.init:
     print(f"\nCreating run directory at {run_dir}")
     os.mkdir(run_dir)
 
+    # copy powheg input
     powheg_input_path = os.path.join(dir_path, "powheg.input")
     print(f"\nCopying powheg input file to working directory:\n\t{powheg_input_path}")
     os.system(f"cp {opts.input_file} {powheg_input_path}")
+    # copy pwg-rwl
+    rwl_input_path = os.path.join(os.path.dirname(opts.input_file), f"pwg-rwl.dat_{opts.pdf}")
+    if not os.path.exists(rwl_input_path):
+        print(f"ERROR: pwg_rwl.dat file does not exist, expect it to be at\n\t{rwl_input_path}\nto match the given pdf set {opts.pdf}")
+        exit()
+    rwl_path = os.path.join(dir_path, "pwg-rwl.dat")
+    os.system(f"cp {rwl_input_path} {rwl_path}")
+    print(f"Copying rwl input file to working directory:\n\t{rwl_path}")
 
     # generate a yml file with all settings
     settings = {
@@ -79,6 +88,7 @@ if opts.init:
         "muF": float(opts.muF),
         "tag": opts.tag,
         "powheg.input": powheg_input_path,
+        "pwg-rwl": rwl_path,
         "run_dir": run_dir,
         "name": dir_name,
         "stage1": False,
@@ -211,7 +221,7 @@ else:
         workdir=opts.workdir,
         any_exist=True
         )
-    if any_exist:
+    if any_exist and not opts.force:
         print(f"\nFound output files of stage={opts.stage}, it={opts.iteration} in output directory\n\t{settings['run_dir']}")
         query = input(f"Stop execution (stop/quit/s/q/n) or delete old files (delete/del/d/y)? ")
         if query[0].lower() in ["d","y"]:
