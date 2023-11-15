@@ -99,13 +99,13 @@ If validation was successful the next stage can be run.
 ## LHE file production
 
 Parallel stages 1-3 are for preparation of integration grids, so if the inputs for producing LHE files are already available only stage 4 has to be run.
-For this purpose, first initialize a working directory with the appropriate generator settings (mur,muf,pdf,mass), and pick the appropriate `powheg.input` file. For simplicity you can also copy the already existing file
+For this purpose, first initialize a working directory with the appropriate generator settings (mur,muf,pdf,mass), and pick the appropriate `powheg.input` and `pwg-rwl` files. For simplicity you can also copy the already existing file
 ```
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/powheg.input-save $production/test__r1.0_f1.0_m172.5_p320900/powheg.input
+cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/pwg-rwl.dat $production/test__r1.0_f1.0_m172.5_p320900/pwg-rwl.dat
 ```
 Then, proceed to copy the grid files for the LHE run to the run directory in `POWHEG-BOX-RES/ttbb/` (e.g. with the initialization from the example above this would be `$base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900`.
 ```
-cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/configs/pwg-rwl.dat $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/*fullgrid* $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900
 cp /afs/cern.ch/user/m/mhorzela/public/ttbb_PowOl/grids/nominal/*pwgubound* $base/POWHEG-BOX-RES/ttbb/run__test__r1.0_f1.0_m172.5_p320900
 ```
