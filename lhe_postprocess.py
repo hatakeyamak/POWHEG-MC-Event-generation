@@ -18,7 +18,33 @@ def lhe_postprocess(settings, out_dir):
     os.system(cmd)
     cmd = f"mv {run_dir}/pwgboundviolations-*.dat {out_dir}"
     os.system(cmd)
+    cmd = f"mv {run_dir}/powheg.input {out_dir}"
+    os.system(cmd)
 
+    # extract ttbar decay channel from powheg input file
+    pwg_input = os.path.join(out_dir, "powheg.input")
+    mode = None
+    with open(pwg_input, "r") as f:
+        lines = f.readlines()
+        for l in lines:
+            if l.startswith("topdecaymode"):
+                mode = l.split(" ")[1].strip()
+
+    if mode is None:
+        print(f"WARNING: could not extract top decay mode from powheg.input file. Make sure to label your lhe files according to your chosen settings yourself")
+        ttdecay_tag = "ttdecay-UNKNOWN"
+    elif mode == "22222":
+        ttdecay_tag = "ttdecay-incl"
+    elif mode == "11111":
+        ttdecay_tag = "ttdecay-1L"
+    elif mode == "00022":
+        ttdecay_tag = "ttdecay-0L"
+    elif mode == "22200":
+        ttdecay_tag = "ttdecay-2L"
+    else: 
+        print(f"Invalid ttdecay extracted from config ({mode})")
+        ttdecay_tag = "ttdecay-INVALID"
+    
     # loop over lhe files
     n_tot = 0
     for f in list(sorted(lhe_files)):
@@ -42,7 +68,7 @@ def lhe_postprocess(settings, out_dir):
         os.system(cmd)
 
         # get nevents per file
-        cmd = f'grep /event {f} | wc -l > .n'
+        cmd = f'grep /event {new_f} | wc -l > .n'
         os.system(cmd)
         # get the number of events from that file
         with open('.n', "r") as sf:
@@ -75,9 +101,9 @@ def lhe_postprocess(settings, out_dir):
     cmd = f'echo "</LesHouchesEvents>" >> {merged_file}'
     os.system(cmd)
     '''
-    print(f"Extracted {n_tot} from all LHE files")
+    print(f"Extracted {n_tot} events from all LHE files")
 
-    comb_file = f"{out_dir}-events-{n_tot}.lhe" 
+    comb_file = f"{out_dir}-events-{n_tot}-{ttdecay_tag}.lhe" 
     cmd = f"mv {out_dir}/out.lhe {comb_file}"
     os.system(cmd)
     print(f"Moved combined LHE file to\n\t{comb_file}")

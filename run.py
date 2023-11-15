@@ -18,7 +18,7 @@ init_opts.add_option("--muf", dest="muF", default=1.0, help="muF factor (only fo
 parser.add_option_group(init_opts)
 
 lhe_opts = optparse.OptionGroup(parser, "LHE Options")
-lhe_opts.add_option("-N", dest="nevents", default=1000, help="number of events per job")
+lhe_opts.add_option("-N", dest="nevents", default=1000, type=int, help="number of events per job")
 lhe_opts.add_option("-d","--decay",dest="ttbar_decay_channel", default=None, help="speficy ttbar decay channel [0L/1L/2L/incl]")
 lhe_opts.add_option("--process-lhe","--lhe",dest="process_lhe", default=False, action="store_true", help="process the output of the LHE step (4) after its completion")
 parser.add_option_group(lhe_opts)
@@ -40,7 +40,7 @@ elif int(opts.stage) == 4:
     if opts.ttbar_decay_channel is None:
         raise ValueError(
             f"Need to specify a ttbar decay channel for LHE production [0L/1L/2L/incl]")
-    elif not opts.ttbar_decay_channel in ["OL", "1L", "2L", "incl"]:
+    elif not opts.ttbar_decay_channel in ["0L", "1L", "2L", "incl"]:
         raise ValueError(
             f"Invalid choice for ttbar decay channel ({opts.ttbar_decay_channel}). The options are [0L/1L/2L/incl]")
 
@@ -254,6 +254,8 @@ submit_handler(
     nbatches=int(opts.nbatches),
     stage=int(opts.stage),
     iteration=int(opts.iteration),
+    nevt=int(opts.nevents),
+    ttbardecay=opts.ttbar_decay_channel,
     workdir=opts.workdir,
     finalization=False
     )

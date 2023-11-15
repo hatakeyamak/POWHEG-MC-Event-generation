@@ -70,13 +70,13 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
         os.system(cmd)
         # ttdecay
         if ttbardecay == "0L":
-            decay_id = 00022
+            decay_id = "00022"
         elif ttbardecay == "1L":
-            decay_id = 11111
+            decay_id = "11111"
         elif ttbardecay == "2L":
-            decay_id = 22200
+            decay_id = "22200"
         else: #incl
-            decay_id = 22222
+            decay_id = "22222"
         cmd = f'echo "topdecaymode {decay_id}" >> {input_file}'
         os.system(cmd)
         n_lines += 2
@@ -106,6 +106,8 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
     shell_name = f"stage{stage}"
     if stage==1:
         shell_name += f"_it{iteration}"
+    if stage==4:
+        shell_name += f"__{ttbardecay}"
 
     submit_dir = os.path.join(workdir, "submit")
     if not os.path.exists(submit_dir):
