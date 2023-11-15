@@ -3,8 +3,7 @@ import os
 
 from make_seeds import make_seeds
 
-batch_shell_template = """
-#!/bin/bash
+batch_shell_template = """#!/bin/bash
 echo "Running batch job number $1"
 export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
 source $VO_CMS_SW_DIR/cmsset_default.sh
