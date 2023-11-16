@@ -68,7 +68,7 @@ def lhe_postprocess(settings, out_dir):
         os.system(cmd)
 
         # get nevents per file
-        cmd = f'grep /event {new_f} | wc -l > .n'
+        cmd = f'grep /event {new_f[:-3]} | wc -l > .n'
         os.system(cmd)
         # get the number of events from that file
         with open('.n', "r") as sf:
