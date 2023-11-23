@@ -69,7 +69,7 @@ After one stage has finished, the output of the previous stage can be validated.
 Initialize a new run via:
 ```
 cd $production
-python3 ../POWHEG-MC-Event-generation/run.py --init -p ../POWHEG-BOX-RES/ttbb -i ../POWHEG-MC-Event-generation/ttbb_powheg_inputs/powheg.input_1L -t test
+python3 ../POWHEG-MC-Event-generation/run.py --init -p ../POWHEG-BOX-RES/ttbb -i ../POWHEG-MC-Event-generation/ttbb_powheg_inputs/powheg.input_nominal -t test
 ```
 Use the help function of `POWHEG-MC-Event-generation/run.py` for more details on the options.
 In summary, with `-p` the path to the process directory in your `POWHEG-BOX-RES` has to be given, `-i` specifies a `powheg.input` file to use for this production and `-t` specifies a name tag for the run to differentiate it from other productions.
