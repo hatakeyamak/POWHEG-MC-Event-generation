@@ -16,10 +16,10 @@ cd $startdir
 echo 'CMSSW initialized'
 
 #add the LHAPDF library path to PATH
-PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+PATH=$PATH:/cvmfs/cms.cern.ch/slc7_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/cms.cern.ch/slc7_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
 #add the FASTJET library path to PATH
-PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/fastjet/3.1.0/bin/
+PATH=$PATH:/cvmfs/cms.cern.ch/slc7_amd64_gcc630/external/fastjet/3.1.0/bin/
 echo 'POWHEG initialized'
 
 # running powheg
@@ -35,6 +35,7 @@ error  = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).err
 log    = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).log
 output = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).out
 run_as_owner = true
+MY.WantOS = "el7"
 +JobFlavour = {runtime}
 JobBatchName = {batchname}
 request_cpus = 4
