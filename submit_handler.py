@@ -4,45 +4,60 @@ import os
 from make_seeds import make_seeds
 
 batch_shell_template = """#!/bin/bash
-echo "Running batch job number $1"
-export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
-source $VO_CMS_SW_DIR/cmsset_default.sh
-alias cd='cd -P'
+source /cvmfs/grid.desy.de/etc/profile.d/grid-ui-env.sh
 
-startdir=$PWD
-cd {cmssw_base}
-eval `scramv1 runtime -sh`
-cd $startdir
-echo 'CMSSW initialized'
+# Dump all code into 'MC_Generation_Script_{job_id}.sh'
+cat <<'EndOfMCGenerationFile' > MC_Generation_Script_{job_id}.sh
+#!/bin/bash
 
-#add the LHAPDF library path to PATH
-PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/lhapdf/6.2.1-fmblme/bin/
-#add the FASTJET library path to PATH
-PATH=$PATH:/cvmfs/cms.cern.ch/slc6_amd64_gcc630/external/fastjet/3.1.0/bin/
-echo 'POWHEG initialized'
+echo "Processing job number {job_id} ... "
+export HOME=/afs/desy.de/user/p/perezdan
+CWD=`pwd -P`
+mkdir -p /tmp/job_{job_id}
+cd /tmp/job_{job_id}
 
-# running powheg
+### Setup CMSSW ###
+cd /data/dust/user/perezdan/Misc/Me2025/POWHEG-v1
+export SCRAM_ARCH=el8_amd64_gcc10
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+if [ -r CMSSW_12_4_11/src ] ; then
+    echo release CMSSW_12_4_11 already exists
+else
+    scram p CMSSW CMSSW_12_4_11
+fi
+cd CMSSW_12_4_11/src
+eval `scram runtime -sh`
+
+# Running PowHeg
 cd {run_dir}
+echo {job_id} | ./../pwhg_main
+
+### Cleaning ###
+cd $CWD
+rm -rf /tmp/job_{job_id}
+echo "shell script has finished"
+
+# End of MC_Generation_Script_{job_id}.sh
+EndOfMCGenerationFile
+
+# Make file executable
+chmod +x MC_Generation_Script_{job_id}.sh
+
+# Run in EL8 container
+export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
+singularity run -B /afs -B /data -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
 """
 
 submitTemplate = """
-universe = vanilla
-max_retries = 3
-retry_until = ExitCode == 0
-request_cpus = 4
-JobBatchName = {batchname}
-+JobFlavour = {runtime}
-executable = {arg}
-arguments = $(ProcId)
-initialdir = {dir}/{shell_name}
-error  = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).err
-log    = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).log
-output = {dir}/{shell_name}/run_$(Cluster)_$(ProcId).out
-run_as_owner = true
-requirements = (Arch == "X86_64") && ( (OpSysAndVer =?= "AlmaLinux9") || (OpSysAndVer =?= "CentOS7") )
-MY.WantOS    = "el7"
-queue {n}
++RequestRuntime       = 200000
+RequestMemory         = 2000
+universe              = vanilla
+executable            = {dir}/mc_generation_job_$(ProcId).sh
+output                = {dir}/mc_generation_job_$(ProcId).out
+error                 = {dir}/mc_generation_job_$(ProcId).err
+log                   = {dir}/mc_generation_job_$(ProcId).log
+transfer_executable   = True
+queue {nJobs}
 """
 
 def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workdir, finalization=False):
@@ -92,72 +107,25 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
     print("The following configuration is now in the powheg.input file:\n")
     os.system(f"tail -n {n_lines} {input_file}")
 
-    # generate a shell script for the batch submit
-    cmssw_base = os.path.join(os.environ["CMSSW_BASE"], "src")
-    
-    shell_code = batch_shell_template.format(
-        cmssw_base=cmssw_base, run_dir=run_dir)
-
-    if int(stage)==5:
-        # decay stage is different
-        shell_code += 'jobid=$(printf "%04d" $1) \n'
-        shell_code += 'echo pwgevents-${jobid}.lhe | ./../lhef_decay \n'
-        shell_code += 'echo "Done with lhef_decay routine, starting to zip lhe files" \n'
-        shell_code += 'echo "</LesHouchesEvents>" | gzip - | cat - >> pwgevents-${jobid}-decayed.lhe \n'
-    else:
-        shell_code += "echo $1 | ./../pwhg_main"
-
-    shell_name = f"stage{stage}"
-    if stage==1:
-        shell_name += f"_it{iteration}"
-    if stage==4:
-        shell_name += f"__{ttbardecay}"
-
     submit_dir = os.path.join(workdir, "submit")
     if not os.path.exists(submit_dir):
         os.mkdir(submit_dir)
-    log_dir = os.path.join(submit_dir, "logs")
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-    if not os.path.exists(os.path.join(log_dir, shell_name)):
-        os.mkdir(os.path.join(log_dir, shell_name))
-
-    shell_path = os.path.join(submit_dir, f"{shell_name}.sh")
-    with open(shell_path, "w") as f:
-        f.write(shell_code)
-    os.system(f"chmod u+x {shell_path}")
-    print(f"\nGenerated shell file for job submission at {shell_path}")
     
-    # determine runtime (HTCondor accepts arguments only with "")
-    runtimes = {
-        1: (86400, '"tomorrow"'),
-        2: (3*86400, '"nextweek"'),
-        3: (86400, '"tomorrow"'),
-        4: (2*86400, '"testmatch"'),
-        5: (3600, '"longlunch"'),
-        }
-    runtime_int, runtime_str = runtimes[stage]
+    # create batch submit scripts
+    for iJob in range(nbatches):
+        shell_path = os.path.join(submit_dir, f"mc_generation_job_{str(iJob)}.sh")
+        shell_code = batch_shell_template.format(run_dir=run_dir,job_id=iJob)
+        with open(shell_path, "w") as f:
+            f.write(shell_code)
+    os.system(f"chmod u+x {submit_dir}/*.sh")
     
-
     # write condor submit script
-    submit_path = os.path.join(submit_dir, f"{shell_name}.sub")
-    # setup submit code
-    batch_name = f"pwhg__{shell_name}__{settings['name']}"
+    submit_path = os.path.join(submit_dir, f"mc_generation_jobs.sub")
     code = submitTemplate.format(
-        arg=os.path.abspath(shell_path),
-        dir=os.path.abspath(log_dir),
-        initdir=os.path.abspath(run_dir),
-        runtime=runtime_str,
-        shell_name=shell_name,
-        batchname=batch_name,
-        n=nbatches)
-
+        dir=os.path.abspath(submit_dir),
+        nJobs=nbatches)
     with open(submit_path, "w") as f:
         f.write(code)
-    print(f"Generated submit script at {submit_path}")
     
-    # submitting
-    print(f"Submitting...")
-    cmd = f"condor_submit {submit_path}"
-    os.system(cmd)
+    print(f"Generated submit script at {submit_path}")
 
