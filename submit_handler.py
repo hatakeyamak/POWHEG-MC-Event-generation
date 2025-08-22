@@ -4,20 +4,24 @@ import os
 from make_seeds import make_seeds
 
 batch_shell_template = """#!/bin/bash
-source /cvmfs/grid.desy.de/etc/profile.d/grid-ui-env.sh
+#source /cvmfs/grid.desy.de/etc/profile.d/grid-ui-env.sh
 
 # Dump all code into 'MC_Generation_Script_{job_id}.sh'
 cat <<'EndOfMCGenerationFile' > MC_Generation_Script_{job_id}.sh
 #!/bin/bash
 
 echo "Processing job number {job_id} ... "
-export HOME=/afs/desy.de/user/p/perezdan
+export HOME=/cms/data/hatake/
+# export HOME=/afs/cern.ch/work/h/hatake/
+# /afs/cern.ch/user/h/hatake
 CWD=`pwd -P`
 mkdir -p /tmp/job_{job_id}
 cd /tmp/job_{job_id}
 
 ### Setup CMSSW ###
-cd /data/dust/user/perezdan/Misc/Me2025/POWHEG-v1
+cd /cms/data/hatake/ana/TTBB/My-TTBB/
+# cd /afs/cern.ch/work/h/hatake/public/My-TTBB
+# /eos/user/h/hatake/POWHEG-v1
 export SCRAM_ARCH=el8_amd64_gcc10
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [ -r CMSSW_12_4_11/src ] ; then
@@ -27,6 +31,9 @@ else
 fi
 cd CMSSW_12_4_11/src
 eval `scram runtime -sh`
+
+export LD_LIBRARY_PATH=/cms/data/hatake/ana/TTBB/My-TTBB/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/afs/cern.ch/work/h/hatake/public/My-TTBB/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
 
 # Running PowHeg
 cd {run_dir}
@@ -45,11 +52,13 @@ chmod +x MC_Generation_Script_{job_id}.sh
 
 # Run in EL8 container
 export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
-singularity run -B /afs -B /data -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
+singularity run -B /cms/data -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
+# singularity run -B /afs -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
 """
 
 submitTemplate = """
 +RequestRuntime       = 200000
++JobFlavour = "tomorrow"
 RequestMemory         = 2000
 universe              = vanilla
 executable            = {dir}/mc_generation_job_$(ProcId).sh
@@ -58,6 +67,20 @@ error                 = {dir}/mc_generation_job_$(ProcId).err
 log                   = {dir}/mc_generation_job_$(ProcId).log
 transfer_executable   = True
 queue {nJobs}
+"""
+
+submitTemplatePBS = """
+#!/bin/bash
+#PBS -l nodes=1:ncpus=1
+#PBS -m ea
+#PBS -kdoe
+#PBS -J 0-99
+#PBS -o {dir}/mc_generation_job_^array_index^.stdout
+#PBS -e {dir}/mc_generation_job_^array_index^.stderr
+hostname
+pwd
+cd $PBS_O_WORKDIR
+bash {dir}/mc_generation_job_$PBS_ARRAY_INDEX.sh
 """
 
 def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workdir, finalization=False):
@@ -110,7 +133,7 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
     submit_dir = os.path.join(workdir, "submit")
     if not os.path.exists(submit_dir):
         os.mkdir(submit_dir)
-    
+
     # create batch submit scripts
     for iJob in range(nbatches):
         shell_path = os.path.join(submit_dir, f"mc_generation_job_{str(iJob)}.sh")
@@ -118,7 +141,7 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
         with open(shell_path, "w") as f:
             f.write(shell_code)
     os.system(f"chmod u+x {submit_dir}/*.sh")
-    
+
     # write condor submit script
     submit_path = os.path.join(submit_dir, f"mc_generation_jobs.sub")
     code = submitTemplate.format(
@@ -126,6 +149,15 @@ def submit_handler(settings, nbatches, stage, iteration, nevt, ttbardecay, workd
         nJobs=nbatches)
     with open(submit_path, "w") as f:
         f.write(code)
-    
+
     print(f"Generated submit script at {submit_path}")
 
+    # write pbs submit script
+    submit_path = os.path.join(submit_dir, f"mc_generation_jobs.pbs")
+    code = submitTemplatePBS.format(
+        dir=os.path.abspath(submit_dir),
+        nJobs=nbatches)
+    with open(submit_path, "w") as f:
+        f.write(code)
+
+    print(f"Generated pbs submit script at {submit_path}")
