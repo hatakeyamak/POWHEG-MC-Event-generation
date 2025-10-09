@@ -11,12 +11,12 @@ cat <<'EndOfMCGenerationFile' > MC_Generation_Script_{job_id}.sh
 #!/bin/bash
 
 echo "Processing job number {job_id} ... "
-export HOME=/cms/data/hatake/
+#export HOME=/cms/data/hatake/
 # export HOME=/afs/cern.ch/work/h/hatake/
 # /afs/cern.ch/user/h/hatake
 CWD=`pwd -P`
-mkdir -p /tmp/job_{job_id}
-cd /tmp/job_{job_id}
+#mkdir -p /tmp/job_{job_id}
+#cd /tmp/job_{job_id}
 
 ### Setup CMSSW ###
 cd /cms/data/hatake/ana/TTBB/My-TTBB/
@@ -41,7 +41,7 @@ echo {job_id} | ./../pwhg_main
 
 ### Cleaning ###
 cd $CWD
-rm -rf /tmp/job_{job_id}
+#rm -rf /tmp/job_{job_id}
 echo "shell script has finished"
 
 # End of MC_Generation_Script_{job_id}.sh
@@ -70,7 +70,7 @@ queue {nJobs}
 """
 
 submitTemplatePBS = """
-#!/bin/bash
+#!/bin/bash --norc
 #PBS -l nodes=1:ncpus=1
 #PBS -m ea
 #PBS -kdoe
