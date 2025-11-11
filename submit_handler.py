@@ -19,21 +19,21 @@ CWD=`pwd -P`
 #cd /tmp/job_{job_id}
 
 ### Setup CMSSW ###
-cd /cms/data/hatake/ana/TTBB/My-TTBB/
-# cd /afs/cern.ch/work/h/hatake/public/My-TTBB
+cd /cms/data/hatake/ana/TTBB/My-TTBB_el7/
+# cd /afs/cern.ch/work/h/hatake/public/My-TTBB_el7
 # /eos/user/h/hatake/POWHEG-v1
-export SCRAM_ARCH=el8_amd64_gcc10
+export SCRAM_ARCH=slc7_amd64_gcc700
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-if [ -r CMSSW_12_4_11/src ] ; then
-    echo release CMSSW_12_4_11 already exists
+if [ -r CMSSW_10_6_48/src ] ; then
+    echo release CMSSW_10_6_48 already exists
 else
-    scram p CMSSW CMSSW_12_4_11
+    scram p CMSSW CMSSW_10_6_48
 fi
-cd CMSSW_12_4_11/src
+cd CMSSW_10_6_48/src
 eval `scram runtime -sh`
 
-export LD_LIBRARY_PATH=/cms/data/hatake/ana/TTBB/My-TTBB/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
-# export LD_LIBRARY_PATH=/afs/cern.ch/work/h/hatake/public/My-TTBB/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/cms/data/hatake/ana/TTBB/My-TTBB_el7/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/afs/cern.ch/work/h/hatake/public/My-TTBB_el7/POWHEG-BOX-RES/ttbb/obj-gfortran:$LD_LIBRARY_PATH
 
 # Running PowHeg
 cd {run_dir}
@@ -50,10 +50,10 @@ EndOfMCGenerationFile
 # Make file executable
 chmod +x MC_Generation_Script_{job_id}.sh
 
-# Run in EL8 container
+# Run in EL7 container
 export SINGULARITY_CACHEDIR="/tmp/$(whoami)/singularity"
-singularity run -B /cms/data -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
-# singularity run -B /afs -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el8:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
+singularity run -B /cms/data -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
+# singularity run -B /afs -B /cvmfs -B /etc/grid-security --home $PWD:$PWD /cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:x86_64 $(echo $(pwd)/MC_Generation_Script_{job_id}.sh)
 """
 
 submitTemplate = """
